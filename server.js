@@ -5,6 +5,8 @@ const { transcribeAudio } = require('./speechRecognition');
 const { getResponse } = require('./nlp');
 const say = require('say');
 const fs = require('fs');
+const { scheduleTask, cancelTask } = require('./taskScheduler');
+
 
 const app = express();
 const server = http.createServer(app);
@@ -34,6 +36,24 @@ io.on('connection', (socket) => {
             console.error('Error processing audio:', error);
             socket.emit('error', 'Error processing your request.');
         }
+    });
+});
+
+io.on('connection', (socket) => {
+    console.log('User connected');
+
+    // Existing audio event listener...
+
+    // New listener for scheduling tasks
+    socket.on('scheduleTask', ({ time, description }) => {
+        const result = scheduleTask(time, description);
+        socket.emit('taskResponse', result);
+    });
+
+    // New listener for canceling tasks
+    socket.on('cancelTask', (description) => {
+        const result = cancelTask(description);
+        socket.emit('taskResponse', result);
     });
 });
 
