@@ -4,6 +4,7 @@ const historyContainer = document.querySelector('.history'); // Container for di
 const commandHistory = JSON.parse(localStorage.getItem('commandHistory')) || []; // Load command history from local storage
 let voices = [];
 let selectedVoice = null;
+let isListening = false; // Track if JARVIS is listening
 
 // Speak function with voice selection
 function speak(text) {
@@ -57,6 +58,9 @@ recognition.onresult = (event) => {
 
 recognition.onend = () => {
     content.textContent = "Click the button to start listening again.";
+    if (isListening) {
+        startListening(); // Restart listening if it's still activated
+    }
 };
 
 recognition.onerror = (event) => {
@@ -64,19 +68,28 @@ recognition.onerror = (event) => {
     speak("I didn't catch that, please try again.");
 };
 
-btn.addEventListener('click', () => {
+// Start listening function
+function startListening() {
+    isListening = true; // Set listening state to true
     content.textContent = "Listening...";
-    recognition.start();
-});
+    recognition.start(); // Start the speech recognition service
+}
 
 // Handle voice commands
 function takeCommand(message) {
     let recognized = false; // Flag to indicate if a command was recognized
 
     // Commands using regex for better matching
-    if (/^(hey|hello)/i.test(message)) {
+    if (/^(hey|hello) jarvis/i.test(message)) {
         recognized = true;
         speak("Hello Sir, How May I Help You?");
+        isListening = true; // Activate listening
+        startListening(); // Start listening for commands
+    } else if (/stop jarvis/i.test(message)) {
+        recognized = true;
+        speak("Stopping JARVIS. Goodbye!");
+        isListening = false; // Deactivate listening
+        recognition.stop(); // Stop the speech recognition service
     } else if (/open google/i.test(message)) {
         recognized = true;
         speak("Opening Google...");
@@ -85,20 +98,18 @@ function takeCommand(message) {
         recognized = true;
         speak("Opening Youtube...");
         window.open("https://youtube.com", "_blank");
-    } else if (/open facebook/i.test(message)) {
+    } else if (/current president of india/i.test(message)) {
         recognized = true;
-        speak("Opening Facebook...");
-        window.open("https://facebook.com", "_blank");
-    } else if (/^(what is|who is|what are)/i.test(message)) {
-        const query = message.replace(/^(what is|who is|what are)/i, "").trim();
+        speak("The current president of India is Droupadi Murmu.");
+    } else if (/current prime minister of india/i.test(message)) {
         recognized = true;
-        speak(`This is what I found on the internet regarding ${query}`);
-        window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, "_blank");
-    } else if (/wikipedia/i.test(message)) {
-        const query = message.replace(/wikipedia/i, "").trim();
+        speak("The current Prime Minister of India is Narendra Modi.");
+    } else if (/latest news/i.test(message)) {
         recognized = true;
-        speak(`This is what I found on Wikipedia regarding ${query}`);
-        window.open(`https://en.wikipedia.org/wiki/${encodeURIComponent(query)}`, "_blank");
+        fetchNews();
+    } else if (/current weather/i.test(message)) {
+        recognized = true;
+        fetchWeather();
     } else if (/time/i.test(message)) {
         const time = new Date().toLocaleTimeString();
         recognized = true;
@@ -147,6 +158,35 @@ function fetchRandomJoke() {
         });
 }
 
+// Fetch latest news (use your own API key)
+function fetchNews() {
+    fetch('https://newsapi.org/v2/top-headlines?country=in&apiKey=YOUR_API_KEY')
+        .then(response => response.json())
+        .then(data => {
+            const headline = data.articles[0].title;
+            speak(`The latest headline is: ${headline}`);
+        })
+        .catch(error => {
+            console.error('Error fetching news:', error);
+            speak("Sorry, I couldn't fetch the latest news at the moment.");
+        });
+}
+
+// Fetch current weather (use your own API key)
+function fetchWeather() {
+    fetch('https://api.openweathermap.org/data/2.5/weather?q=Delhi&appid=YOUR_API_KEY&units=metric')
+        .then(response => response.json())
+        .then(data => {
+            const temperature = data.main.temp;
+            const description = data.weather[0].description;
+            speak(`The current weather in Delhi is ${temperature} degrees Celsius with ${description}.`);
+        })
+        .catch(error => {
+            console.error('Error fetching weather:', error);
+            speak("Sorry, I couldn't fetch the current weather at the moment.");
+        });
+}
+
 // Save command history to local storage
 function saveCommandHistory(command) {
     commandHistory.push(command);
@@ -172,3 +212,12 @@ function clearCommandHistory() {
 
 // Load voices when available
 window.speechSynthesis.onvoiceschanged = loadVoices;
+
+// Start listening when the button is clicked
+btn.addEventListener('click', () => {
+    if (!isListening) {
+        startListening(); // Start listening if not already listening
+    } else {
+        speak("JARVIS is already listening. Say 'Stop Jarvis' to deactivate.");
+    }
+});
