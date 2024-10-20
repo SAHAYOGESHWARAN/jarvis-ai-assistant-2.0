@@ -1,151 +1,32 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jarvis AI Assistant</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"> <!-- Bootstrap CSS -->
-    <link rel="stylesheet" href="styles.css"> <!-- Link to your custom CSS file -->
+    <title>JARVIS - Virtual Assistant</title>
+    <link rel="shortcut icon" href="avatar.png" type="image/x-icon">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
 </head>
-<body class="robotic"> <!-- Set default class for the robotic theme -->
-    <div class="container mt-5">
-        <h1 class="text-center">Welcome to Jarvis AI Assistant</h1>
-        
-        <button id="start" class="btn btn-success btn-block">Start Listening</button>
-        <p id="response" class="response text-center"></p>
 
-        <h2 class="mt-4">Task Scheduler</h2>
-        <div class="form-group">
-            <input id="taskDescription" class="form-control" placeholder="Task Description">
+<body>
+    <section class="main">
+        <div class="image-container">
+            <div class="image">
+                <img src="giphy.gif" alt="image">
+            </div>
+            <h1>J A R V I S</h1>
+            <p>I m a Virtual Assistant JARVIS, How may i help you?</p>
         </div>
-        <div class="form-group">
-            <input id="taskTime" class="form-control" type="datetime-local">
+        <div class="input">
+            <button class="talk"><i class="fas fa-microphone-alt"></i></button>
+            <h1 class="content"> Click here to speak</h1>
         </div>
-        <button id="scheduleTask" class="btn btn-primary btn-block">Schedule Task</button>
-        <button id="cancelTask" class="btn btn-danger btn-block">Cancel Task</button>
-        <p id="taskResponse" class="response text-center"></p>
-
-        <h2 class="mt-4">Scheduled Tasks</h2>
-        <ul id="taskList" class="list-group mb-4"></ul>
-
-        <h2 class="mt-4">Theme Switcher</h2>
-        <select id="theme-select" class="form-control">
-            <option value="robotic">Robotic</option>
-            <option value="light">Light</option>
-            <option value="dark">Dark</option>
-        </select>
-    </div>
-
-    <script src="/socket.io/socket.io.js"></script>
-    <script>
-        const socket = io();
-
-        const startButton = document.getElementById('start');
-        const responseParagraph = document.getElementById('response');
-        const taskDescriptionInput = document.getElementById('taskDescription');
-        const taskTimeInput = document.getElementById('taskTime');
-        const taskResponseParagraph = document.getElementById('taskResponse');
-        const taskList = document.getElementById('taskList');
-
-        // Voice command logic
-        startButton.addEventListener('click', () => {
-            startListening();
-        });
-
-        function startListening() {
-            const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-            recognition.lang = 'en-US'; // Set the language
-            recognition.onstart = () => {
-                responseParagraph.textContent = "Listening...";
-            };
-            recognition.onresult = (event) => {
-                const command = event.results[0][0].transcript;
-                responseParagraph.textContent = `You said: ${command}`;
-                handleVoiceCommand(command);
-            };
-            recognition.onerror = (event) => {
-                responseParagraph.textContent = `Error occurred in recognition: ${event.error}`;
-            };
-            recognition.start();
-        }
-
-        function handleVoiceCommand(command) {
-            if (command.includes("schedule task")) {
-                const taskDescription = prompt("What is the task description?");
-                const taskTime = prompt("When should I schedule it? (YYYY-MM-DDTHH:MM)");
-                if (taskDescription && taskTime) {
-                    scheduleTask(taskDescription, taskTime);
-                }
-            }
-            // Add more voice command handling as needed
-        }
-
-        socket.on('response', (data) => {
-            responseParagraph.textContent = data;
-        });
-
-        socket.on('error', (errorMessage) => {
-            responseParagraph.textContent = errorMessage;
-        });
-
-        document.getElementById('scheduleTask').addEventListener('click', () => {
-            const description = taskDescriptionInput.value;
-            const time = new Date(taskTimeInput.value).toISOString();
-            scheduleTask(description, time);
-        });
-
-        function scheduleTask(description, time) {
-            if (description && time) {
-                socket.emit('scheduleTask', { time, description });
-                taskDescriptionInput.value = '';
-                taskTimeInput.value = '';
-            } else {
-                alert("Please provide both task description and time.");
-            }
-        }
-
-        document.getElementById('cancelTask').addEventListener('click', () => {
-            const description = taskDescriptionInput.value;
-            socket.emit('cancelTask', description);
-        });
-
-        socket.on('taskResponse', (data) => {
-            taskResponseParagraph.textContent = data;
-            updateTaskList();
-        });
-
-        socket.on('taskListUpdate', (tasks) => {
-            updateTaskList(tasks);
-        });
-
-        function updateTaskList(tasks = []) {
-            taskList.innerHTML = ''; // Clear current list
-            tasks.forEach(task => {
-                const li = document.createElement('li');
-                li.className = 'list-group-item d-flex justify-content-between align-items-center';
-                li.textContent = `${task.description} - ${new Date(task.time).toLocaleString()}`;
-                const completeButton = document.createElement('button');
-                completeButton.className = 'btn btn-success btn-sm';
-                completeButton.textContent = 'Complete';
-                completeButton.onclick = () => {
-                    socket.emit('completeTask', task.description);
-                };
-                li.appendChild(completeButton);
-                taskList.appendChild(li);
-            });
-        }
-
-        document.getElementById('theme-select').addEventListener('change', (event) => {
-            document.body.className = event.target.value; // Change body class to the selected theme
-            localStorage.setItem('theme', event.target.value); // Store selected theme in local storage
-        });
-
-        // Load theme from local storage
-        const savedTheme = localStorage.getItem('theme');
-        if (savedTheme) {
-            document.body.className = savedTheme;
-            document.getElementById('theme-select').value = savedTheme; // Set the selected option
-        }
-    </script>
+    </section>
+    <script src="app.js"></script>
 </body>
+
 </html>
