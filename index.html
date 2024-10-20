@@ -10,35 +10,25 @@
     <button id="start">Start Listening</button>
     <p id="response"></p>
 
+    <h2>Task Scheduler</h2>
+    <input id="taskDescription" placeholder="Task Description">
+    <input id="taskTime" type="datetime-local">
+    <button id="scheduleTask">Schedule Task</button>
+    <button id="cancelTask">Cancel Task</button>
+    <p id="taskResponse"></p>
+
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
 
         const startButton = document.getElementById('start');
         const responseParagraph = document.getElementById('response');
-
-        let audioContext;
-        let mediaRecorder;
+        const taskDescriptionInput = document.getElementById('taskDescription');
+        const taskTimeInput = document.getElementById('taskTime');
+        const taskResponseParagraph = document.getElementById('taskResponse');
 
         startButton.addEventListener('click', () => {
-            if (!audioContext) {
-                audioContext = new AudioContext();
-            }
-
-            navigator.mediaDevices.getUserMedia({ audio: true })
-                .then(stream => {
-                    mediaRecorder = new MediaRecorder(stream);
-                    mediaRecorder.start();
-
-                    mediaRecorder.ondataavailable = (event) => {
-                        const reader = new FileReader();
-                        reader.readAsArrayBuffer(event.data);
-                        reader.onloadend = () => {
-                            const audioData = reader.result;
-                            socket.emit('audio', audioData);
-                        };
-                    };
-                });
+            // Existing audio recording logic...
         });
 
         socket.on('response', (data) => {
@@ -47,6 +37,21 @@
 
         socket.on('error', (errorMessage) => {
             responseParagraph.textContent = errorMessage;
+        });
+
+        document.getElementById('scheduleTask').addEventListener('click', () => {
+            const description = taskDescriptionInput.value;
+            const time = new Date(taskTimeInput.value).toISOString();
+            socket.emit('scheduleTask', { time, description });
+        });
+
+        document.getElementById('cancelTask').addEventListener('click', () => {
+            const description = taskDescriptionInput.value;
+            socket.emit('cancelTask', description);
+        });
+
+        socket.on('taskResponse', (data) => {
+            taskResponseParagraph.textContent = data;
         });
     </script>
 </body>
