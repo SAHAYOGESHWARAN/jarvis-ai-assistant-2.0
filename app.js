@@ -5,6 +5,7 @@ const commandHistory = JSON.parse(localStorage.getItem('commandHistory')) || [];
 let voices = [];
 let selectedVoice = null;
 let isListening = false; // Track if JARVIS is listening
+let listenTimeout = null; // To keep track of the listen timeout
 
 // Speak function with voice selection
 function speak(text) {
@@ -29,7 +30,7 @@ function wishMe() {
     const hour = new Date().getHours();
     const greeting = (hour < 12) ? "Good Morning saha Boss..." :
                      (hour < 17) ? "Good Afternoon saha Master..." : 
-                     "Good Evening  saha Sir...";
+                     "Good Evening saha sir...";
     speak(greeting);
 }
 
@@ -58,9 +59,8 @@ recognition.onresult = (event) => {
 
 recognition.onend = () => {
     content.textContent = "Click the button to start listening again.";
-    if (isListening) {
-        startListening(); // Restart listening if it's still activated
-    }
+    clearTimeout(listenTimeout); // Clear the timeout
+    isListening = false; // Reset listening flag after stopping
 };
 
 recognition.onerror = (event) => {
@@ -68,12 +68,17 @@ recognition.onerror = (event) => {
     speak("I didn't catch that, please try again.");
 };
 
-// Start listening function
+// Start listening function (with 10 seconds auto stop)
 function startListening() {
     if (!isListening) {
         isListening = true; // Set listening state to true
-        content.textContent = "Listening...";
+        content.textContent = "Listening for 10 seconds...";
         recognition.start(); // Start the speech recognition service
+
+        // Set a timeout to stop listening after 10 seconds
+        listenTimeout = setTimeout(() => {
+            stopListening(); // Automatically stop listening after 10 seconds
+        }, 10000); // 10 seconds
     }
 }
 
