@@ -47,14 +47,14 @@
         const taskResponseParagraph = document.getElementById('taskResponse');
         const taskList = document.getElementById('taskList');
 
-        // Voice command logic (example)
+        // Voice command logic
         startButton.addEventListener('click', () => {
             startListening();
         });
 
         function startListening() {
-            // Implement speech recognition
             const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+            recognition.lang = 'en-US'; // Set the language
             recognition.onstart = () => {
                 responseParagraph.textContent = "Listening...";
             };
@@ -63,6 +63,9 @@
                 responseParagraph.textContent = `You said: ${command}`;
                 handleVoiceCommand(command);
             };
+            recognition.onerror = (event) => {
+                responseParagraph.textContent = `Error occurred in recognition: ${event.error}`;
+            };
             recognition.start();
         }
 
@@ -70,7 +73,9 @@
             if (command.includes("schedule task")) {
                 const taskDescription = prompt("What is the task description?");
                 const taskTime = prompt("When should I schedule it? (YYYY-MM-DDTHH:MM)");
-                scheduleTask(taskDescription, taskTime);
+                if (taskDescription && taskTime) {
+                    scheduleTask(taskDescription, taskTime);
+                }
             }
             // Add more voice command handling as needed
         }
@@ -90,9 +95,13 @@
         });
 
         function scheduleTask(description, time) {
-            socket.emit('scheduleTask', { time, description });
-            taskDescriptionInput.value = '';
-            taskTimeInput.value = '';
+            if (description && time) {
+                socket.emit('scheduleTask', { time, description });
+                taskDescriptionInput.value = '';
+                taskTimeInput.value = '';
+            } else {
+                alert("Please provide both task description and time.");
+            }
         }
 
         document.getElementById('cancelTask').addEventListener('click', () => {
