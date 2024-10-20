@@ -1,168 +1,153 @@
 const btn = document.querySelector('.talk');
 const content = document.querySelector('.content');
-const historyContainer = document.querySelector('.history'); // Container for displaying command history
-const commandHistory = JSON.parse(localStorage.getItem('commandHistory')) || []; // Load command history from local storage
+const historyContainer = document.querySelector('.history'); 
+const commandHistory = JSON.parse(localStorage.getItem('commandHistory')) || []; 
+
 let voices = [];
 let selectedVoice = null;
-let isListening = false; // Track if JARVIS is listening
-let listenTimeout = null; // To keep track of the listen timeout
+let isListening = false; 
+let listenTimeout = null; 
 
-// Speak function with voice selection
-function speak(text) {
+// Speak function with more adjustable settings
+function speak(text, rate = 1, pitch = 1, volume = 1) {
     const textSpeak = new SpeechSynthesisUtterance(text);
-    textSpeak.voice = selectedVoice; // Set selected voice
-    textSpeak.rate = 1; // Default rate
-    textSpeak.volume = 1; // Default volume
-    textSpeak.pitch = 1; // Default pitch
+    textSpeak.voice = selectedVoice; 
+    textSpeak.rate = rate; 
+    textSpeak.volume = volume; 
+    textSpeak.pitch = pitch; 
 
-    console.log(`Speaking: ${text}`);
+    console.log(`Speaking: ${text}`); 
     window.speechSynthesis.speak(textSpeak);
 }
 
-// Load available voices
+// Load available voices dynamically
 function loadVoices() {
     voices = window.speechSynthesis.getVoices();
-    selectedVoice = voices.find(voice => voice.name === 'Google US English') || voices[0]; // Set default voice
+    selectedVoice = voices.find(voice => voice.name === 'Google US English') || voices[0]; 
 }
 
 // Wish the user based on the time of day
 function wishMe() {
     const hour = new Date().getHours();
-    const greeting = (hour < 12) ? "Good Morning saha Boss..." :
-                     (hour < 17) ? "Good Afternoon saha Master..." : 
-                     "Good Evening saha sir...";
+    const greeting = (hour < 12) ? "Good Morning, saha Boss..." :
+                     (hour < 17) ? "Good Afternoon, saha Master..." : 
+                     "Good Evening, saha Sir...";
     speak(greeting);
 }
 
-// Load the page
+// Initialize JARVIS
 window.addEventListener('load', () => {
     loadVoices();
-    speak("Initializing JARVIS...");
+    speak("Initializing JARVIS...", 1, 1, 1);
     wishMe();
 });
 
-// Set up Speech Recognition
+// Advanced Speech Recognition Setup
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 const recognition = new SpeechRecognition();
-recognition.interimResults = true; // Show interim results
+recognition.interimResults = true; 
+recognition.continuous = false; 
 
+// Handle Speech Recognition results
 recognition.onresult = (event) => {
-    const currentIndex = event.resultIndex;
-    const transcript = event.results[currentIndex][0].transcript.trim();
+    const transcript = event.results[event.resultIndex][0].transcript.trim();
+    console.log(`Recognized Speech: ${transcript}`);
+    
     content.textContent = transcript;
     takeCommand(transcript.toLowerCase());
-
-    // Log the command for history
-    saveCommandHistory(transcript);
+    
+    saveCommandHistory(transcript); 
     displayCommandHistory();
 };
 
+// Manage Speech Recognition Stop
 recognition.onend = () => {
     content.textContent = "Click the button to start listening again.";
-    clearTimeout(listenTimeout); // Clear the timeout
-    isListening = false; // Reset listening flag after stopping
+    clearTimeout(listenTimeout);
+    isListening = false; 
 };
 
+// Handle recognition errors more gracefully
 recognition.onerror = (event) => {
     console.error('Speech recognition error:', event.error);
-    speak("I didn't catch that, please try again.");
+    speak("I didn't catch that. Please try again.");
+    setTimeout(() => startListening(), 3000); 
 };
 
-// Start listening function (with 10 seconds auto stop)
-function startListening() {
+// Improved Listening Functionality (with Timeout)
+function startListening(timeoutDuration = 10000) {
     if (!isListening) {
-        isListening = true; // Set listening state to true
-        content.textContent = "Listening for 10 seconds...";
-        recognition.start(); // Start the speech recognition service
-
-        // Set a timeout to stop listening after 10 seconds
+        isListening = true;
+        content.textContent = "Listening...";
+        recognition.start(); 
+        
         listenTimeout = setTimeout(() => {
-            stopListening(); // Automatically stop listening after 10 seconds
-        }, 10000); // 10 seconds
+            stopListening();
+        }, timeoutDuration);
     }
 }
 
-// Stop listening function
+// Stop listening explicitly
 function stopListening() {
-    isListening = false; // Set listening state to false
-    recognition.stop(); // Stop the speech recognition service
+    isListening = false; 
+    recognition.stop(); 
     speak("JARVIS has stopped listening.");
 }
 
-// Handle voice commands
+// Handle voice commands using a flexible mapping
 function takeCommand(message) {
-    let recognized = false; // Flag to indicate if a command was recognized
+    const commandMap = {
+        'hey jarvis': () => {
+            speak("Hello Sir, how may I assist you?");
+            startListening(); 
+        },
+        'open google': () => {
+            speak("Opening Google...");
+            window.open("https://google.com", "_blank");
+        },
+        'open youtube': () => {
+            speak("Opening YouTube...");
+            window.open("https://youtube.com", "_blank");
+        },
+        'current president of india': () => {
+            speak("The current president of India is Droupadi Murmu.");
+        },
+        'current prime minister of india': () => {
+            speak("The current Prime Minister of India is Narendra Modi.");
+        },
+        'time': () => {
+            const time = new Date().toLocaleTimeString();
+            speak(`The current time is ${time}`);
+        },
+        'date': () => {
+            const date = new Date().toLocaleDateString();
+            speak(`Today's date is ${date}`);
+        },
+        'tell me a joke': fetchRandomJoke,
+        'latest news': fetchNews,
+        'current weather': fetchWeather,
+        'show history': () => {
+            speak("Here are your recent commands: " + commandHistory.join(", "));
+        },
+        'clear history': clearCommandHistory
+    };
 
-    // Commands using regex for better matching
-    if (/^(hey|hello) jarvis/i.test(message)) {
-        recognized = true;
-        speak("Hello Sir, How May I Help You?");
-        isListening = true; // Activate listening
-        startListening(); // Start listening for commands
-    } else if (/stop jarvis/i.test(message)) {
-        recognized = true;
-        stopListening(); // Stop listening
-    } else if (/open google/i.test(message)) {
-        recognized = true;
-        speak("Opening Google...");
-        window.open("https://google.com", "_blank");
-    } else if (/open youtube/i.test(message)) {
-        recognized = true;
-        speak("Opening Youtube...");
-        window.open("https://youtube.com", "_blank");
-    } else if (/current president of india/i.test(message)) {
-        recognized = true;
-        speak("The current president of India is Droupadi Murmu.");
-    } else if (/current prime minister of india/i.test(message)) {
-        recognized = true;
-        speak("The current Prime Minister of India is Narendra Modi.");
-    } else if (/latest news/i.test(message)) {
-        recognized = true;
-        fetchNews();
-    } else if (/current weather/i.test(message)) {
-        recognized = true;
-        fetchWeather();
-    } else if (/time/i.test(message)) {
-        const time = new Date().toLocaleTimeString();
-        recognized = true;
-        speak(`The current time is ${time}`);
-    } else if (/date/i.test(message)) {
-        const date = new Date().toLocaleDateString();
-        recognized = true;
-        speak(`Today's date is ${date}`);
-    } else if (/calculator/i.test(message)) {
-        recognized = true;
-        speak("Opening Calculator...");
-        window.open('Calculator:///');
-    } else if (/joke/i.test(message)) {
-        recognized = true;
-        fetchRandomJoke();
-    } else if (/history/i.test(message)) {
-        recognized = true;
-        speak("Here are your recent commands: " + commandHistory.join(", "));
-    } else if (/clear history/i.test(message)) {
-        recognized = true;
-        clearCommandHistory();
+    const matchedCommand = Object.keys(commandMap).find(cmd => message.includes(cmd));
+    
+    if (matchedCommand) {
+        commandMap[matchedCommand]();
     } else {
-        recognized = true;
-        const query = message.trim();
-        speak(`I found some information for ${query} on Google`);
-        window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, "_blank");
-    }
-
-    // Feedback if no command was recognized
-    if (!recognized) {
-        speak("I'm not sure how to help with that.");
+        speak(`I found some information for ${message} on Google`);
+        window.open(`https://www.google.com/search?q=${encodeURIComponent(message)}`, "_blank");
     }
 }
 
-// Fetch a random joke
+// Fetch a random joke (Improved error handling)
 function fetchRandomJoke() {
     fetch('https://official-joke-api.appspot.com/jokes/random')
         .then(response => response.json())
         .then(data => {
-            const joke = `${data.setup} ${data.punchline}`;
-            speak(joke);
+            speak(`${data.setup} ... ${data.punchline}`);
         })
         .catch(error => {
             console.error('Error fetching joke:', error);
@@ -170,7 +155,7 @@ function fetchRandomJoke() {
         });
 }
 
-// Fetch latest news (use your own API key)
+// Fetch latest news
 function fetchNews() {
     fetch('https://newsapi.org/v2/top-headlines?country=in&apiKey=YOUR_API_KEY')
         .then(response => response.json())
@@ -184,7 +169,7 @@ function fetchNews() {
         });
 }
 
-// Fetch current weather (use your own API key)
+// Fetch current weather
 function fetchWeather() {
     fetch('https://api.openweathermap.org/data/2.5/weather?q=Delhi&appid=YOUR_API_KEY&units=metric')
         .then(response => response.json())
@@ -207,7 +192,7 @@ function saveCommandHistory(command) {
 
 // Display command history on the UI
 function displayCommandHistory() {
-    historyContainer.innerHTML = ""; // Clear previous history display
+    historyContainer.innerHTML = "";
     commandHistory.forEach((cmd, index) => {
         const commandElement = document.createElement('div');
         commandElement.textContent = `${index + 1}: ${cmd}`;
@@ -217,19 +202,20 @@ function displayCommandHistory() {
 
 // Clear command history
 function clearCommandHistory() {
-    commandHistory.length = 0; // Clear array
-    localStorage.removeItem('commandHistory'); // Remove from local storage
-    displayCommandHistory(); // Refresh the displayed history
+    commandHistory.length = 0;
+    localStorage.removeItem('commandHistory'); 
+    displayCommandHistory(); 
+    speak("Command history cleared.");
 }
 
-// Load voices when available
+// Load voices dynamically
 window.speechSynthesis.onvoiceschanged = loadVoices;
 
-// Start listening when the button is clicked
+// Button to start/stop listening
 btn.addEventListener('click', () => {
     if (!isListening) {
-        startListening(); // Start listening if not already listening
+        startListening(); 
     } else {
-        speak("JARVIS is already listening saha. Say 'Stop Jarvis' to deactivate.");
+        speak("JARVIS is already listening. Say 'Stop Jarvis' to deactivate.");
     }
 });
