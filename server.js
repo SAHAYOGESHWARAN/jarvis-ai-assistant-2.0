@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
@@ -7,7 +8,6 @@ const say = require('say');
 const fs = require('fs');
 const { scheduleTask, cancelTask } = require('./taskScheduler');
 const { setContext, getContext, clearContext } = require('./contextManager');
-
 
 const app = express();
 const server = http.createServer(app);

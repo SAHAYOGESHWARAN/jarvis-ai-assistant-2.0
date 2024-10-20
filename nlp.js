@@ -1,18 +1,20 @@
-const { Configuration, OpenAIApi } = require("openai");
+const OpenAI = require("openai");
 
-const configuration = new Configuration({
-    apiKey: process.env.OPENAI_API_KEY, // Store your API key in an environment variable
+console.log("OPENAI_API_KEY:", process.env.OPENAI_API_KEY); // Debugging line
+
+const openai = new OpenAI({
+    apiKey: 'sk-4A2eKp1A7dEfghijklmnopQRsTUVwxyz1234567890', // Replace with your actual key
 });
-const openai = new OpenAIApi(configuration);
+
 
 async function getResponse(prompt) {
-    const response = await openai.createCompletion({
-        model: "text-davinci-003", // Use GPT-4 for more advanced models
-        prompt: prompt,
+    const response = await openai.chat.completions.create({
+        model: "gpt-3.5-turbo", // Use gpt-4 if you have access
+        messages: [{ role: "user", content: prompt }],
         max_tokens: 150,
     });
 
-    return response.data.choices[0].text.trim();
+    return response.choices[0].message.content.trim();
 }
 
 module.exports = { getResponse };
