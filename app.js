@@ -70,9 +70,18 @@ recognition.onerror = (event) => {
 
 // Start listening function
 function startListening() {
-    isListening = true; // Set listening state to true
-    content.textContent = "Listening...";
-    recognition.start(); // Start the speech recognition service
+    if (!isListening) {
+        isListening = true; // Set listening state to true
+        content.textContent = "Listening...";
+        recognition.start(); // Start the speech recognition service
+    }
+}
+
+// Stop listening function
+function stopListening() {
+    isListening = false; // Set listening state to false
+    recognition.stop(); // Stop the speech recognition service
+    speak("JARVIS has stopped listening.");
 }
 
 // Handle voice commands
@@ -87,9 +96,7 @@ function takeCommand(message) {
         startListening(); // Start listening for commands
     } else if (/stop jarvis/i.test(message)) {
         recognized = true;
-        speak("Stopping JARVIS. Goodbye!");
-        isListening = false; // Deactivate listening
-        recognition.stop(); // Stop the speech recognition service
+        stopListening(); // Stop listening
     } else if (/open google/i.test(message)) {
         recognized = true;
         speak("Opening Google...");
