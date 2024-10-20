@@ -25,6 +25,9 @@
         <button id="cancelTask" class="btn btn-danger btn-block">Cancel Task</button>
         <p id="taskResponse" class="response text-center"></p>
 
+        <h2 class="mt-4">Scheduled Tasks</h2>
+        <ul id="taskList" class="list-group mb-4"></ul>
+
         <h2 class="mt-4">Theme Switcher</h2>
         <select id="theme-select" class="form-control">
             <option value="robotic">Robotic</option>
@@ -42,10 +45,35 @@
         const taskDescriptionInput = document.getElementById('taskDescription');
         const taskTimeInput = document.getElementById('taskTime');
         const taskResponseParagraph = document.getElementById('taskResponse');
+        const taskList = document.getElementById('taskList');
 
+        // Voice command logic (example)
         startButton.addEventListener('click', () => {
-            // Existing audio recording logic...
+            startListening();
         });
+
+        function startListening() {
+            // Implement speech recognition
+            const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+            recognition.onstart = () => {
+                responseParagraph.textContent = "Listening...";
+            };
+            recognition.onresult = (event) => {
+                const command = event.results[0][0].transcript;
+                responseParagraph.textContent = `You said: ${command}`;
+                handleVoiceCommand(command);
+            };
+            recognition.start();
+        }
+
+        function handleVoiceCommand(command) {
+            if (command.includes("schedule task")) {
+                const taskDescription = prompt("What is the task description?");
+                const taskTime = prompt("When should I schedule it? (YYYY-MM-DDTHH:MM)");
+                scheduleTask(taskDescription, taskTime);
+            }
+            // Add more voice command handling as needed
+        }
 
         socket.on('response', (data) => {
             responseParagraph.textContent = data;
@@ -58,8 +86,14 @@
         document.getElementById('scheduleTask').addEventListener('click', () => {
             const description = taskDescriptionInput.value;
             const time = new Date(taskTimeInput.value).toISOString();
-            socket.emit('scheduleTask', { time, description });
+            scheduleTask(description, time);
         });
+
+        function scheduleTask(description, time) {
+            socket.emit('scheduleTask', { time, description });
+            taskDescriptionInput.value = '';
+            taskTimeInput.value = '';
+        }
 
         document.getElementById('cancelTask').addEventListener('click', () => {
             const description = taskDescriptionInput.value;
@@ -68,11 +102,41 @@
 
         socket.on('taskResponse', (data) => {
             taskResponseParagraph.textContent = data;
+            updateTaskList();
         });
+
+        socket.on('taskListUpdate', (tasks) => {
+            updateTaskList(tasks);
+        });
+
+        function updateTaskList(tasks = []) {
+            taskList.innerHTML = ''; // Clear current list
+            tasks.forEach(task => {
+                const li = document.createElement('li');
+                li.className = 'list-group-item d-flex justify-content-between align-items-center';
+                li.textContent = `${task.description} - ${new Date(task.time).toLocaleString()}`;
+                const completeButton = document.createElement('button');
+                completeButton.className = 'btn btn-success btn-sm';
+                completeButton.textContent = 'Complete';
+                completeButton.onclick = () => {
+                    socket.emit('completeTask', task.description);
+                };
+                li.appendChild(completeButton);
+                taskList.appendChild(li);
+            });
+        }
 
         document.getElementById('theme-select').addEventListener('change', (event) => {
             document.body.className = event.target.value; // Change body class to the selected theme
+            localStorage.setItem('theme', event.target.value); // Store selected theme in local storage
         });
+
+        // Load theme from local storage
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme) {
+            document.body.className = savedTheme;
+            document.getElementById('theme-select').value = savedTheme; // Set the selected option
+        }
     </script>
 </body>
 </html>
