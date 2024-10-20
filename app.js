@@ -18,6 +18,7 @@ function speak(text, rate = 1, pitch = 1, volume = 1) {
 
     console.log(`Speaking: ${text}`);
     window.speechSynthesis.speak(textSpeak);
+    content.textContent = text; // Show the spoken word in the output
 }
 
 // Load available voices dynamically
@@ -53,7 +54,7 @@ recognition.onresult = (event) => {
     const transcript = event.results[event.resultIndex][0].transcript.trim();
     console.log(`Recognized Speech: ${transcript}`);
     
-    content.textContent = transcript;
+    content.textContent = transcript; // Show recognized speech
     takeCommand(transcript.toLowerCase());
     
     saveCommandHistory(transcript);
