@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jarvis AI Assistant</title>
+</head>
+<body>
+    <h1>Welcome to Jarvis AI Assistant</h1>
+    <button id="start">Start Listening</button>
+    <p id="response"></p>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        const startButton = document.getElementById('start');
+        const responseParagraph = document.getElementById('response');
+
+        let audioContext;
+        let mediaRecorder;
+
+        startButton.addEventListener('click', () => {
+            if (!audioContext) {
+                audioContext = new AudioContext();
+            }
+
+            navigator.mediaDevices.getUserMedia({ audio: true })
+                .then(stream => {
+                    mediaRecorder = new MediaRecorder(stream);
+                    mediaRecorder.start();
+
+                    mediaRecorder.ondataavailable = (event) => {
+                        const reader = new FileReader();
+                        reader.readAsArrayBuffer(event.data);
+                        reader.onloadend = () => {
+                            const audioData = reader.result;
+                            socket.emit('audio', audioData);
+                        };
+                    };
+                });
+        });
+
+        socket.on('response', (data) => {
+            responseParagraph.textContent = data;
+        });
+
+        socket.on('error', (errorMessage) => {
+            responseParagraph.textContent = errorMessage;
+        });
+    </script>
+</body>
+</html>
