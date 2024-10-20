@@ -1,0 +1,81 @@
+/* styles.css */
+
+/* Base Styles */
+body {
+    font-family: 'Arial', sans-serif;
+    margin: 0;
+    padding: 20px;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+/* Robotic Theme Styles */
+body.robotic {
+    background-color: #111; /* Dark background for a terminal feel */
+    color: #00ff00; /* Bright green text to mimic old computer displays */
+    font-family: 'Courier New', Courier, monospace; /* Monospace font for a techy look */
+    transition: background-color 0.3s, color 0.3s; /* Smooth transition for color changes */
+}
+
+/* Button Styles */
+.btn {
+    transition: background-color 0.3s, color 0.3s; /* Smooth transition for button colors */
+}
+
+/* Button Styles for Robotic Theme */
+body.robotic .btn-success {
+    background-color: #007700; /* Dark green button */
+    color: white; /* White text for contrast */
+}
+
+body.robotic .btn-success:hover {
+    background-color: #005500; /* Darker green on hover */
+}
+
+body.robotic .btn-primary {
+    background-color: #0056b3; /* Blue button for scheduling tasks */
+}
+
+body.robotic .btn-primary:hover {
+    background-color: #004494; /* Darker blue on hover */
+}
+
+body.robotic .btn-danger {
+    background-color: #c82333; /* Red button for canceling tasks */
+}
+
+body.robotic .btn-danger:hover {
+    background-color: #bd2130; /* Darker red on hover */
+}
+
+/* Input Styles */
+.form-control {
+    border: 1px solid #00ff00; /* Bright green border for input fields */
+    background-color: #333; /* Dark input background */
+    color: #00ff00; /* Bright green text */
+}
+
+/* Response Styles */
+.response {
+    color: #00ff00; /* Bright green text for responses */
+    font-weight: bold; /* Make response text bold */
+    text-align: center; /* Center-align the response text */
+}
+
+/* Additional Styles for Robotic Aesthetics */
+h1, h2 {
+    text-shadow: 0 0 5px #00ff00; /* Glowing effect for headers */
+}
+
+select {
+    color: #00ff00; /* Green text for select options */
+    background-color: #222; /* Dark background for select */
+    border: 1px solid #00ff00; /* Bright green border for select */
+}
+
+/* Container Styles */
+.container {
+    padding: 20px; /* Space around the content */
+    border-radius: 8px; /* Rounded corners */
+    background-color: #222; /* Dark background for the container */
+    box-shadow: 0 4px 8px rgba(0, 255, 0, 0.2); /* Green glow effect for depth */
+}
