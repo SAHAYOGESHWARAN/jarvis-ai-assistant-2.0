@@ -1,37 +1,37 @@
 const btn = document.querySelector('.talk');
 const content = document.querySelector('.content');
-const historyContainer = document.querySelector('.history'); 
-const commandHistory = JSON.parse(localStorage.getItem('commandHistory')) || []; 
+const historyContainer = document.querySelector('.history');
+const commandHistory = JSON.parse(localStorage.getItem('commandHistory')) || [];
 
 let voices = [];
 let selectedVoice = null;
-let isListening = false; 
-let listenTimeout = null; 
+let isListening = false;
+let listenTimeout = null;
 
-// Speak function with more adjustable settings
+// Speak function with adjustable rate, pitch, and volume
 function speak(text, rate = 1, pitch = 1, volume = 1) {
     const textSpeak = new SpeechSynthesisUtterance(text);
-    textSpeak.voice = selectedVoice; 
-    textSpeak.rate = rate; 
-    textSpeak.volume = volume; 
-    textSpeak.pitch = pitch; 
+    textSpeak.voice = selectedVoice;
+    textSpeak.rate = rate;
+    textSpeak.volume = volume;
+    textSpeak.pitch = pitch;
 
-    console.log(`Speaking: ${text}`); 
+    console.log(`Speaking: ${text}`);
     window.speechSynthesis.speak(textSpeak);
 }
 
 // Load available voices dynamically
 function loadVoices() {
     voices = window.speechSynthesis.getVoices();
-    selectedVoice = voices.find(voice => voice.name === 'Google US English') || voices[0]; 
+    selectedVoice = voices.find(voice => voice.name === 'Google US English') || voices[0];
 }
 
-// Wish the user based on the time of day
+// Greet based on time of day
 function wishMe() {
     const hour = new Date().getHours();
     const greeting = (hour < 12) ? "Good Morning, saha Boss..." :
-                     (hour < 17) ? "Good Afternoon, saha Master..." : 
-                     "Good Evening, saha Sir...";
+        (hour < 17) ? "Good Afternoon, saha Master..." :
+        "Good Evening, saha Sir...";
     speak(greeting);
 }
 
@@ -45,8 +45,8 @@ window.addEventListener('load', () => {
 // Advanced Speech Recognition Setup
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 const recognition = new SpeechRecognition();
-recognition.interimResults = true; 
-recognition.continuous = false; 
+recognition.interimResults = true;
+recognition.continuous = false;
 
 // Handle Speech Recognition results
 recognition.onresult = (event) => {
@@ -56,7 +56,7 @@ recognition.onresult = (event) => {
     content.textContent = transcript;
     takeCommand(transcript.toLowerCase());
     
-    saveCommandHistory(transcript); 
+    saveCommandHistory(transcript);
     displayCommandHistory();
 };
 
@@ -64,22 +64,22 @@ recognition.onresult = (event) => {
 recognition.onend = () => {
     content.textContent = "Click the button to start listening again.";
     clearTimeout(listenTimeout);
-    isListening = false; 
+    isListening = false;
 };
 
-// Handle recognition errors more gracefully
+// Handle recognition errors
 recognition.onerror = (event) => {
     console.error('Speech recognition error:', event.error);
     speak("I didn't catch that. Please try again.");
-    setTimeout(() => startListening(), 3000); 
+    setTimeout(() => startListening(), 3000); // Retry listening after 3 seconds
 };
 
-// Improved Listening Functionality (with Timeout)
+// Start Listening Functionality (with adjustable timeout)
 function startListening(timeoutDuration = 10000) {
     if (!isListening) {
         isListening = true;
         content.textContent = "Listening...";
-        recognition.start(); 
+        recognition.start();
         
         listenTimeout = setTimeout(() => {
             stopListening();
@@ -87,19 +87,19 @@ function startListening(timeoutDuration = 10000) {
     }
 }
 
-// Stop listening explicitly
+// Stop Listening Function
 function stopListening() {
-    isListening = false; 
-    recognition.stop(); 
+    isListening = false;
+    recognition.stop();
     speak("JARVIS has stopped listening.");
 }
 
-// Handle voice commands using a flexible mapping
+// Command handling function
 function takeCommand(message) {
     const commandMap = {
         'hey jarvis': () => {
             speak("Hello Sir, how may I assist you?");
-            startListening(); 
+            startListening();
         },
         'open google': () => {
             speak("Opening Google...");
@@ -129,11 +129,17 @@ function takeCommand(message) {
         'show history': () => {
             speak("Here are your recent commands: " + commandHistory.join(", "));
         },
-        'clear history': clearCommandHistory
+        'clear history': clearCommandHistory,
+        'open calculator': () => {
+            speak("Opening calculator...");
+            window.open('Calculator:///');
+        },
+        'play music': playMusic,
+        'stop music': stopMusic
     };
 
     const matchedCommand = Object.keys(commandMap).find(cmd => message.includes(cmd));
-    
+
     if (matchedCommand) {
         commandMap[matchedCommand]();
     } else {
@@ -142,7 +148,7 @@ function takeCommand(message) {
     }
 }
 
-// Fetch a random joke (Improved error handling)
+// Fetch a random joke
 function fetchRandomJoke() {
     fetch('https://official-joke-api.appspot.com/jokes/random')
         .then(response => response.json())
@@ -184,6 +190,22 @@ function fetchWeather() {
         });
 }
 
+// Music control commands (use Web Audio API or external API)
+let audioPlayer = null;
+
+function playMusic() {
+    audioPlayer = new Audio('path_to_music.mp3');
+    audioPlayer.play();
+    speak("Playing music...");
+}
+
+function stopMusic() {
+    if (audioPlayer) {
+        audioPlayer.pause();
+        speak("Music stopped.");
+    }
+}
+
 // Save command history to local storage
 function saveCommandHistory(command) {
     commandHistory.push(command);
@@ -203,8 +225,8 @@ function displayCommandHistory() {
 // Clear command history
 function clearCommandHistory() {
     commandHistory.length = 0;
-    localStorage.removeItem('commandHistory'); 
-    displayCommandHistory(); 
+    localStorage.removeItem('commandHistory');
+    displayCommandHistory();
     speak("Command history cleared.");
 }
 
@@ -214,10 +236,8 @@ window.speechSynthesis.onvoiceschanged = loadVoices;
 // Button to start/stop listening
 btn.addEventListener('click', () => {
     if (!isListening) {
-        startListening(); 
+        startListening();
     } else {
-        speak("JARVIS is already listening saha . Say 'Stop Jarvis' to deactivate.");
+        speak("JARVIS is already listening, saha. Say 'Stop Jarvis' to deactivate.");
     }
 });
-
-
