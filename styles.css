@@ -1,81 +1,165 @@
-/* styles.css */
-
 /* Base Styles */
 body {
-    font-family: 'Arial', sans-serif;
+    font-family: 'Roboto', sans-serif; /* Modern font for a clean look */
     margin: 0;
     padding: 20px;
-    transition: background-color 0.3s, color 0.3s;
+    background: linear-gradient(135deg, #1a1a2e, #16213e); /* Dark gradient background */
+    color: #ffffff; /* Light text for contrast */
+    transition: background-color 0.3s, color 0.3s; /* Smooth transition for background and text colors */
 }
 
-/* Robotic Theme Styles */
-body.robotic {
-    background-color: #111; /* Dark background for a terminal feel */
-    color: #00ff00; /* Bright green text to mimic old computer displays */
-    font-family: 'Courier New', Courier, monospace; /* Monospace font for a techy look */
-    transition: background-color 0.3s, color 0.3s; /* Smooth transition for color changes */
+/* Futuristic Theme Styles */
+body.futuristic {
+    background: linear-gradient(135deg, #0f0c29, #302b63, #24243e); /* Colorful gradient for a techy look */
+    color: #ffffff; /* Bright white text */
 }
 
 /* Button Styles */
 .btn {
-    transition: background-color 0.3s, color 0.3s; /* Smooth transition for button colors */
+    transition: background-color 0.3s, color 0.3s, transform 0.2s; /* Smooth transition for button colors and scale */
+    border-radius: 8px; /* Rounded corners for a modern feel */
+    box-shadow: 0 4px 15px rgba(255, 255, 255, 0.2); /* Subtle glow effect */
 }
 
-/* Button Styles for Robotic Theme */
-body.robotic .btn-success {
-    background-color: #007700; /* Dark green button */
+.btn:hover {
+    transform: translateY(-2px); /* Slightly lift the button on hover */
+}
+
+/* Button Styles for Futuristic Theme */
+body.futuristic .btn-success {
+    background-color: #4CAF50; /* Bright green button */
     color: white; /* White text for contrast */
 }
 
-body.robotic .btn-success:hover {
-    background-color: #005500; /* Darker green on hover */
+body.futuristic .btn-success:hover {
+    background-color: #45a049; /* Darker green on hover */
 }
 
-body.robotic .btn-primary {
-    background-color: #0056b3; /* Blue button for scheduling tasks */
+body.futuristic .btn-primary {
+    background-color: #2196F3; /* Bright blue button */
 }
 
-body.robotic .btn-primary:hover {
-    background-color: #004494; /* Darker blue on hover */
+body.futuristic .btn-primary:hover {
+    background-color: #0b7dda; /* Darker blue on hover */
 }
 
-body.robotic .btn-danger {
-    background-color: #c82333; /* Red button for canceling tasks */
+body.futuristic .btn-danger {
+    background-color: #f44336; /* Bright red button */
 }
 
-body.robotic .btn-danger:hover {
-    background-color: #bd2130; /* Darker red on hover */
+body.futuristic .btn-danger:hover {
+    background-color: #da190b; /* Darker red on hover */
 }
 
 /* Input Styles */
 .form-control {
-    border: 1px solid #00ff00; /* Bright green border for input fields */
-    background-color: #333; /* Dark input background */
-    color: #00ff00; /* Bright green text */
+    border: 1px solid #ffffff; /* White border for input fields */
+    background-color: #2a2a72; /* Dark blue input background */
+    color: #ffffff; /* White text */
+    border-radius: 8px; /* Rounded corners */
+    transition: border-color 0.3s, box-shadow 0.3s; /* Smooth transition for border color */
+}
+
+.form-control:focus {
+    border-color: #4CAF50; /* Lighter green when focused */
+    box-shadow: 0 0 10px rgba(76, 175, 80, 0.7); /* Glow effect on focus */
 }
 
 /* Response Styles */
 .response {
-    color: #00ff00; /* Bright green text for responses */
+    color: #00ffcc; /* Bright teal text for responses */
     font-weight: bold; /* Make response text bold */
     text-align: center; /* Center-align the response text */
+    animation: fadeIn 1s; /* Fade-in animation for emphasis */
 }
 
-/* Additional Styles for Robotic Aesthetics */
+/* Fade-in Animation */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* Additional Styles for Futuristic Aesthetics */
 h1, h2 {
-    text-shadow: 0 0 5px #00ff00; /* Glowing effect for headers */
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.6); /* Glowing effect for headers */
+    letter-spacing: 1px; /* Space between letters for a techy look */
+    transition: text-shadow 0.3s; /* Smooth transition for shadow */
+}
+
+/* Hover effect on headers */
+h1:hover, h2:hover {
+    text-shadow: 0 0 20px rgba(255, 255, 255, 1); /* Intense glow on hover */
 }
 
 select {
-    color: #00ff00; /* Green text for select options */
-    background-color: #222; /* Dark background for select */
-    border: 1px solid #00ff00; /* Bright green border for select */
+    color: #ffffff; /* White text for select options */
+    background-color: #2a2a72; /* Dark blue background for select */
+    border: 1px solid #ffffff; /* White border for select */
+    border-radius: 8px; /* Rounded corners */
+    transition: border-color 0.3s; /* Smooth transition for border color */
+}
+
+select:focus {
+    border-color: #4CAF50; /* Lighter green when focused */
+    box-shadow: 0 0 10px rgba(76, 175, 80, 0.7); /* Glow effect on focus */
 }
 
 /* Container Styles */
 .container {
     padding: 20px; /* Space around the content */
-    border-radius: 8px; /* Rounded corners */
-    background-color: #222; /* Dark background for the container */
-    box-shadow: 0 4px 8px rgba(0, 255, 0, 0.2); /* Green glow effect for depth */
+    border-radius: 12px; /* Rounded corners */
+    background-color: #1e1e2f; /* Dark background for the container */
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6); /* Strong shadow effect for depth */
+    animation: slideIn 0.5s ease-in; /* Slide-in animation for the container */
+}
+
+/* Slide-in Animation */
+@keyframes slideIn {
+    from {
+        transform: translateY(-20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* List Item Styles */
+.list-group-item {
+    background-color: #2a2a72; /* Dark blue background for list items */
+    border: 1px solid #ffffff; /* White border */
+    color: #ffffff; /* White text */
+    transition: background-color 0.3s; /* Smooth transition for background color */
+}
+
+.list-group-item:hover {
+    background-color: #3a3a82; /* Slightly lighter on hover */
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+    .container {
+        padding: 15px; /* Less padding on smaller screens */
+    }
+    h1, h2 {
+        font-size: 1.5rem; /* Smaller font size for headings */
+    }
+}
+
+/* Media Queries for Small Screens */
+@media (max-width: 480px) {
+    body {
+        font-size: 14px; /* Smaller text for very small screens */
+    }
+    .btn {
+        font-size: 14px; /* Smaller buttons */
+    }
+    .form-control {
+        font-size: 14px; /* Smaller input fields */
+    }
 }
