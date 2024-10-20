@@ -216,6 +216,8 @@ btn.addEventListener('click', () => {
     if (!isListening) {
         startListening(); 
     } else {
-        speak("JARVIS is already listening. Say 'Stop Jarvis' to deactivate.");
+        speak("JARVIS is already listening saha . Say 'Stop Jarvis' to deactivate.");
     }
 });
+
+
