@@ -27,9 +27,9 @@ function loadVoices() {
 // Wish the user based on the time of day
 function wishMe() {
     const hour = new Date().getHours();
-    const greeting = (hour < 12) ? "Good Morning Boss..." :
-                     (hour < 17) ? "Good Afternoon Master..." : 
-                     "Good Evening Sir...";
+    const greeting = (hour < 12) ? "Good Morning saha Boss..." :
+                     (hour < 17) ? "Good Afternoon saha Master..." : 
+                     "Good Evening  saha Sir...";
     speak(greeting);
 }
 
@@ -225,6 +225,6 @@ btn.addEventListener('click', () => {
     if (!isListening) {
         startListening(); // Start listening if not already listening
     } else {
-        speak("JARVIS is already listening. Say 'Stop Jarvis' to deactivate.");
+        speak("JARVIS is already listening saha. Say 'Stop Jarvis' to deactivate.");
     }
 });
