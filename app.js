@@ -16,7 +16,10 @@ function speak(text, rate = 1, pitch = 1, volume = 1) {
     textSpeak.volume = volume;
     textSpeak.pitch = pitch;
 
-    console.log(`Speaking: ${text}`);
+    // Extra console.log to display the spoken text
+    console.log(`Text to be spoken: "${text}"`);
+    console.log(`Speaking with rate: ${rate}, pitch: ${pitch}, volume: ${volume}`);
+    
     window.speechSynthesis.speak(textSpeak);
     content.textContent = text; // Show the spoken word in the output
 }
@@ -24,8 +27,16 @@ function speak(text, rate = 1, pitch = 1, volume = 1) {
 // Load available voices dynamically
 function loadVoices() {
     voices = window.speechSynthesis.getVoices();
-    selectedVoice = voices.find(voice => voice.name === 'Google US English') || voices[0];
+    if (voices.length > 0) {
+        selectedVoice = voices.find(voice => voice.name === 'Google US English') || voices[0];
+        console.log("Loaded voices: ", voices);
+    } else {
+        console.error("No voices available.");
+    }
 }
+
+// Ensure voices are loaded after they change
+window.speechSynthesis.onvoiceschanged = loadVoices;
 
 // Greet based on time of day
 function wishMe() {
@@ -215,11 +226,11 @@ function saveCommandHistory(command) {
 
 // Display command history on the UI
 function displayCommandHistory() {
-    historyContainer.innerHTML = "";
+    historyContainer.innerHTML = ""; // Clear existing history
     commandHistory.forEach((cmd, index) => {
         const commandElement = document.createElement('div');
-        commandElement.textContent = `${index + 1}: ${cmd}`;
-        historyContainer.appendChild(commandElement);
+        commandElement.textContent = `${index + 1}: ${cmd}`; // Format command with index
+        historyContainer.appendChild(commandElement); // Append each command to the container
     });
 }
 
@@ -230,9 +241,6 @@ function clearCommandHistory() {
     displayCommandHistory();
     speak("Command history cleared.");
 }
-
-// Load voices dynamically
-window.speechSynthesis.onvoiceschanged = loadVoices;
 
 // Button to start/stop listening
 btn.addEventListener('click', () => {
