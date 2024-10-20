@@ -6,6 +6,7 @@ const { getResponse } = require('./nlp');
 const say = require('say');
 const fs = require('fs');
 const { scheduleTask, cancelTask } = require('./taskScheduler');
+const { setContext, getContext, clearContext } = require('./contextManager');
 
 
 const app = express();
@@ -55,6 +56,26 @@ io.on('connection', (socket) => {
         const result = cancelTask(description);
         socket.emit('taskResponse', result);
     });
+});
+
+socket.on('audio', async (audioData) => {
+    try {
+        const transcript = await transcribeAudio(audioData);
+        const previousContext = getContext('lastResponse');
+
+        // Store current task in context
+        setContext('lastUserInput', transcript);
+
+        // Get AI's response considering previous context
+        const aiResponse = await getResponse(`${previousContext ? previousContext + '\n' : ''}${transcript}`);
+        setContext('lastResponse', aiResponse);
+
+        say.speak(aiResponse);
+        socket.emit('response', aiResponse);
+    } catch (error) {
+        console.error('Error processing audio:', error);
+        socket.emit('error', 'Error processing your request.');
+    }
 });
 
 server.listen(3000, () => {
