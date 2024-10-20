@@ -1,36 +1,40 @@
 const btn = document.querySelector('.talk');
 const content = document.querySelector('.content');
-const commandHistory = []; // Store command history
+const historyContainer = document.querySelector('.history'); // Container for displaying command history
+const commandHistory = JSON.parse(localStorage.getItem('commandHistory')) || []; // Load command history from local storage
+let voices = [];
+let selectedVoice = null;
 
-// Speak function
+// Speak function with voice selection
 function speak(text) {
-    const text_speak = new SpeechSynthesisUtterance(text);
-    text_speak.rate = 1;
-    text_speak.volume = 1;
-    text_speak.pitch = 1;
-    
-    // Log the spoken text
+    const textSpeak = new SpeechSynthesisUtterance(text);
+    textSpeak.voice = selectedVoice; // Set selected voice
+    textSpeak.rate = 1; // Default rate
+    textSpeak.volume = 1; // Default volume
+    textSpeak.pitch = 1; // Default pitch
+
     console.log(`Speaking: ${text}`);
-    
-    window.speechSynthesis.speak(text_speak);
+    window.speechSynthesis.speak(textSpeak);
+}
+
+// Load available voices
+function loadVoices() {
+    voices = window.speechSynthesis.getVoices();
+    selectedVoice = voices.find(voice => voice.name === 'Google US English') || voices[0]; // Set default voice
 }
 
 // Wish the user based on the time of day
 function wishMe() {
-    var day = new Date();
-    var hour = day.getHours();
-
-    if (hour >= 0 && hour < 12) {
-        speak("Good Morning Boss...");
-    } else if (hour >= 12 && hour < 17) {
-        speak("Good Afternoon Master...");
-    } else {
-        speak("Good Evening Sir...");
-    }
+    const hour = new Date().getHours();
+    const greeting = (hour < 12) ? "Good Morning Boss..." :
+                     (hour < 17) ? "Good Afternoon Master..." : 
+                     "Good Evening Sir...";
+    speak(greeting);
 }
 
 // Load the page
 window.addEventListener('load', () => {
+    loadVoices();
     speak("Initializing JARVIS...");
     wishMe();
 });
@@ -42,12 +46,13 @@ recognition.interimResults = true; // Show interim results
 
 recognition.onresult = (event) => {
     const currentIndex = event.resultIndex;
-    const transcript = event.results[currentIndex][0].transcript;
+    const transcript = event.results[currentIndex][0].transcript.trim();
     content.textContent = transcript;
     takeCommand(transcript.toLowerCase());
-    
+
     // Log the command for history
-    commandHistory.push(transcript);
+    saveCommandHistory(transcript);
+    displayCommandHistory();
 };
 
 recognition.onend = () => {
@@ -55,7 +60,7 @@ recognition.onend = () => {
 };
 
 recognition.onerror = (event) => {
-    console.error('Speech recognition error', event.error);
+    console.error('Speech recognition error:', event.error);
     speak("I didn't catch that, please try again.");
 };
 
@@ -66,44 +71,65 @@ btn.addEventListener('click', () => {
 
 // Handle voice commands
 function takeCommand(message) {
-    if (message.includes('hey') || message.includes('hello')) {
-        speak("Hello Sir, How May I Help You? ");
-    } else if (message.includes("open google")) {
-        window.open("https://google.com", "_blank");
+    let recognized = false; // Flag to indicate if a command was recognized
+
+    // Commands using regex for better matching
+    if (/^(hey|hello)/i.test(message)) {
+        recognized = true;
+        speak("Hello Sir, How May I Help You?");
+    } else if (/open google/i.test(message)) {
+        recognized = true;
         speak("Opening Google...");
-    } else if (message.includes("open youtube")) {
-        window.open("https://youtube.com", "_blank");
+        window.open("https://google.com", "_blank");
+    } else if (/open youtube/i.test(message)) {
+        recognized = true;
         speak("Opening Youtube...");
-    } else if (message.includes("open facebook")) {
-        window.open("https://facebook.com", "_blank");
+        window.open("https://youtube.com", "_blank");
+    } else if (/open facebook/i.test(message)) {
+        recognized = true;
         speak("Opening Facebook...");
-    } else if (message.includes('what is') || message.includes('who is') || message.includes('what are')) {
-        window.open(`https://www.google.com/search?q=${message.replace(" ", "+")}`, "_blank");
-        const finalText = "This is what I found on the internet regarding " + message;
-        speak(finalText);
-    } else if (message.includes('wikipedia')) {
-        window.open(`https://en.wikipedia.org/wiki/${message.replace("wikipedia", "").trim()}`, "_blank");
-        const finalText = "This is what I found on Wikipedia regarding " + message;
-        speak(finalText);
-    } else if (message.includes('time')) {
-        const time = new Date().toLocaleString(undefined, { hour: "numeric", minute: "numeric" });
-        const finalText = "The current time is " + time;
-        speak(finalText);
-    } else if (message.includes('date')) {
-        const date = new Date().toLocaleString(undefined, { month: "short", day: "numeric", year: "numeric" });
-        const finalText = "Today's date is " + date;
-        speak(finalText);
-    } else if (message.includes('calculator')) {
+        window.open("https://facebook.com", "_blank");
+    } else if (/^(what is|who is|what are)/i.test(message)) {
+        const query = message.replace(/^(what is|who is|what are)/i, "").trim();
+        recognized = true;
+        speak(`This is what I found on the internet regarding ${query}`);
+        window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, "_blank");
+    } else if (/wikipedia/i.test(message)) {
+        const query = message.replace(/wikipedia/i, "").trim();
+        recognized = true;
+        speak(`This is what I found on Wikipedia regarding ${query}`);
+        window.open(`https://en.wikipedia.org/wiki/${encodeURIComponent(query)}`, "_blank");
+    } else if (/time/i.test(message)) {
+        const time = new Date().toLocaleTimeString();
+        recognized = true;
+        speak(`The current time is ${time}`);
+    } else if (/date/i.test(message)) {
+        const date = new Date().toLocaleDateString();
+        recognized = true;
+        speak(`Today's date is ${date}`);
+    } else if (/calculator/i.test(message)) {
+        recognized = true;
+        speak("Opening Calculator...");
         window.open('Calculator:///');
-        speak("Opening Calculator");
-    } else if (message.includes('joke')) {
+    } else if (/joke/i.test(message)) {
+        recognized = true;
         fetchRandomJoke();
-    } else if (message.includes('history')) {
+    } else if (/history/i.test(message)) {
+        recognized = true;
         speak("Here are your recent commands: " + commandHistory.join(", "));
+    } else if (/clear history/i.test(message)) {
+        recognized = true;
+        clearCommandHistory();
     } else {
-        window.open(`https://www.google.com/search?q=${message.replace(" ", "+")}`, "_blank");
-        const finalText = "I found some information for " + message + " on Google";
-        speak(finalText);
+        recognized = true;
+        const query = message.trim();
+        speak(`I found some information for ${query} on Google`);
+        window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, "_blank");
+    }
+
+    // Feedback if no command was recognized
+    if (!recognized) {
+        speak("I'm not sure how to help with that.");
     }
 }
 
@@ -112,7 +138,7 @@ function fetchRandomJoke() {
     fetch('https://official-joke-api.appspot.com/jokes/random')
         .then(response => response.json())
         .then(data => {
-            const joke = data.setup + " " + data.punchline;
+            const joke = `${data.setup} ${data.punchline}`;
             speak(joke);
         })
         .catch(error => {
@@ -120,3 +146,29 @@ function fetchRandomJoke() {
             speak("Sorry, I couldn't fetch a joke at the moment.");
         });
 }
+
+// Save command history to local storage
+function saveCommandHistory(command) {
+    commandHistory.push(command);
+    localStorage.setItem('commandHistory', JSON.stringify(commandHistory));
+}
+
+// Display command history on the UI
+function displayCommandHistory() {
+    historyContainer.innerHTML = ""; // Clear previous history display
+    commandHistory.forEach((cmd, index) => {
+        const commandElement = document.createElement('div');
+        commandElement.textContent = `${index + 1}: ${cmd}`;
+        historyContainer.appendChild(commandElement);
+    });
+}
+
+// Clear command history
+function clearCommandHistory() {
+    commandHistory.length = 0; // Clear array
+    localStorage.removeItem('commandHistory'); // Remove from local storage
+    displayCommandHistory(); // Refresh the displayed history
+}
+
+// Load voices when available
+window.speechSynthesis.onvoiceschanged = loadVoices;
