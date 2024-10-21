@@ -2,6 +2,7 @@ const btn = document.querySelector('.talk');
 const content = document.querySelector('.content');
 const historyContainer = document.querySelector('.history');
 const commandHistory = JSON.parse(localStorage.getItem('commandHistory')) || [];
+let userProfile = JSON.parse(localStorage.getItem('userProfile')) || { name: "User ", preferences: {} };
 
 let voices = [];
 let selectedVoice = null;
@@ -32,17 +33,17 @@ function loadVoices() {
 // Ensure voices are loaded after they change
 window.speechSynthesis.onvoiceschanged = loadVoices;
 
-// Greet based on time of day
+// Greet based on time of day and user profile
 function wishMe() {
     const hour = new Date().getHours();
-    let greeting;
+    let greeting = `Hello ${userProfile.name}, `;
 
     if (hour < 12) {
-        greeting = "Good Morning, Boss...";
+        greeting += "Good Morning! Ready to conquer the day?";
     } else if (hour < 17) {
-        greeting = "Good Afternoon, Master...";
+        greeting += "Good Afternoon! How can I assist you?";
     } else {
-        greeting = "Good Evening, Sir...";
+        greeting += "Good Evening! What can I do for you tonight?";
     }
     speak(greeting);
 }
@@ -50,7 +51,7 @@ function wishMe() {
 // Initialize JARVIS
 window.addEventListener('load', () => {
     loadVoices();
-    speak("Initializing JARVIS...", 1, 1, 1);
+    speak("Initializing JARVIS... Please wait.", 1, 1, 1);
     wishMe();
 });
 
@@ -62,8 +63,6 @@ recognition.continuous = false;
 
 recognition.onresult = (event) => {
     const transcript = event.results[event.resultIndex][0].transcript.trim();
-    
-    // Check if this is the final result
     const isFinal = event.results[event.resultIndex].isFinal;
 
     if (isFinal) {
@@ -84,7 +83,7 @@ recognition.onend = () => {
 
 // Handle recognition errors
 recognition.onerror = (event) => {
-    speak("I didn't catch that. Please try again.");
+    speak("Oops! I didn't catch that. Please try again.");
     setTimeout(() => startListening(), 3000); // Retry listening after 3 seconds
 };
 
@@ -105,22 +104,22 @@ function startListening(timeoutDuration = 10000) {
 function stopListening() {
     isListening = false;
     recognition.stop();
-    speak("JARVIS has stopped listening.");
+    speak("JARVIS has stopped listening. Let me know if you need anything.");
 }
 
 // Command handling function
 function takeCommand(message) {
     const commandMap = {
         'hey jarvis': () => {
-            speak("Hello Sir, how may I assist you?");
+            speak("Hello Sir, how may I assist you today?");
             startListening();
         },
         'open google': () => {
-            speak("Opening Google...");
+            speak("Opening Google for you...");
             window.open("https://google.com", "_blank");
         },
         'open youtube': () => {
-            speak("Opening YouTube...");
+            speak("Opening YouTube, enjoy!");
             window.open("https://youtube.com", "_blank");
         },
         'current president of india': () => {
@@ -131,11 +130,11 @@ function takeCommand(message) {
         },
         'time': () => {
             const time = new Date().toLocaleTimeString();
-            speak(`The current time is ${time}`);
+            speak(`The current time is ${time}.`);
         },
         'date': () => {
             const date = new Date().toLocaleDateString();
-            speak(`Today's date is ${date}`);
+            speak(`Today's date is ${date}.`);
         },
         'tell me a joke': fetchRandomJoke,
         'latest news': fetchNews,
@@ -152,16 +151,18 @@ function takeCommand(message) {
         'stop music': stopMusic,
         'set happy mood': () => {
             mood = 'happy';
-            speak("Mood set to happy.");
+            speak("Mood set to happy. Let's have a great day!");
         },
         'set sad mood': () => {
             mood = 'sad';
-            speak("Mood set to sad.");
+            speak("Mood set to sad. Hope you feel better soon.");
         },
         'set neutral mood': () => {
             mood = 'neutral';
-            speak("Mood set to neutral.");
-        }
+            speak("Mood set to neutral. Let's get back to normal.");
+        },
+        'search': searchQuery,
+        'ask question': chatGPTResponse // Adding chatGPT-like question answering
     };
 
     const matchedCommand = Object.keys(commandMap).find(cmd => message.includes(cmd));
@@ -171,6 +172,12 @@ function takeCommand(message) {
     } else {
         respondToUnknownCommand(message);
     }
+}
+
+// Search query handling (Google Search)
+function searchQuery(query) {
+    speak(`Searching for ${query}...`);
+    window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, "_blank");
 }
 
 // Respond based on mood and unknown command
@@ -184,7 +191,7 @@ function respondToUnknownCommand(message) {
         response = `I found some information for ${message}.`;
     }
     speak(response);
-    window.open(`https://www.google.com/search?q=${encodeURIComponent(message)}`, "_blank");
+    searchQuery(message);
 }
 
 // Fetch a random joke
@@ -199,7 +206,7 @@ function fetchRandomJoke() {
 
 // Fetch latest news
 function fetchNews() {
-    fetch('https://newsapi.org/v2/top-headlines?country=in&apiKey=YOUR_API_KEY')
+    fetch('https://newsapi.org/v2/top-headlines?country=in&apiKey=YOUR_NEWS_API_KEY')
         .then(response => response.json())
         .then(data => {
             const headline = data.articles[0].title;
@@ -210,7 +217,7 @@ function fetchNews() {
 
 // Fetch current weather
 function fetchWeather() {
-    fetch('https://api.openweathermap.org/data/2.5/weather?q=Delhi&appid=YOUR_API_KEY&units=metric')
+    fetch('https://api.openweathermap.org/data/2.5/weather?q=Delhi&appid=YOUR_OPENWEATHERMAP_API_KEY&units=metric')
         .then(response => response.json())
         .then(data => {
             const temperature = data.main.temp;
@@ -268,3 +275,137 @@ btn.addEventListener('click', () => {
         speak("JARVIS is already listening, Sir. Say 'Stop Jarvis' to deactivate.");
     }
 });
+
+// Listen for unknown phrases and prompt search if the query is unrecognized
+recognition.onnomatch = (event) => {
+    const transcript = event.results[event.resultIndex][0]. transcript.trim();
+    speak(`I couldn't find anything for "${transcript}". Let me search that for you.`);
+    searchQuery(transcript);
+};
+
+// Add API key for search and weather fetching
+const NEWS_API_KEY = 'YOUR_NEWS_API_KEY';
+const WEATHER_API_KEY = 'YOUR_OPENWEATHERMAP_API_KEY';
+
+// Fetch latest news
+function fetchNews() {
+    fetch(`https://newsapi.org/v2/top-headlines?country=in&apiKey=${NEWS_API_KEY}`)
+        .then(response => response.json())
+        .then(data => {
+            const headline = data.articles[0]?.title || "No headlines found.";
+            speak(`The latest headline is: ${headline}`);
+        })
+        .catch(() => speak("Sorry, I couldn't fetch the latest news at the moment."));
+}
+
+// Fetch current weather
+function fetchWeather() {
+    fetch(`https://api.openweathermap.org/data/2.5/weather?q=Delhi&appid=${WEATHER_API_KEY}&units=metric`)
+        .then(response => response.json())
+        .then(data => {
+            const temperature = data.main.temp;
+            const description = data.weather[0].description;
+            speak(`The current weather in Delhi is ${temperature} degrees Celsius with ${description}.`);
+        })
+        .catch(() => speak("Sorry, I couldn't fetch the current weather at the moment."));
+}
+
+// Command to provide real-time responses via chat-like interactions
+async function chatGPTResponse(message) {
+    const response = await fetch('https://api.openai.com/v1/engines/davinci-codex/completions', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer YOUR_OPENAI_API_KEY`
+        },
+        body: JSON.stringify({
+            prompt: message,
+            max_tokens: 100
+        })
+    });
+    
+    const data = await response.json();
+    const reply = data.choices[0].text.trim();
+    speak(reply);
+}
+
+// Modify command handling for longer queries
+function takeCommand(message) {
+    const commandMap = {
+        'hey jarvis': () => {
+            speak("Hello Sir, how may I assist you today?");
+            startListening();
+        },
+        'open google': () => {
+            speak("Opening Google for you...");
+            window.open("https://google.com", "_blank");
+        },
+        'open youtube': () => {
+            speak("Opening YouTube, enjoy!");
+            window.open("https://youtube.com", "_blank");
+        },
+        'current president of india': () => {
+            speak("The current president of India is Droupadi Murmu.");
+        },
+        'current prime minister of india': () => {
+            speak("The current Prime Minister of India is Narendra Modi .");
+        },
+        'time': () => {
+            const time = new Date().toLocaleTimeString();
+            speak(`The current time is ${time}.`);
+        },
+        'date': () => {
+            const date = new Date().toLocaleDateString();
+            speak(`Today's date is ${date}.`);
+        },
+        'tell me a joke': fetchRandomJoke,
+        'latest news': fetchNews,
+        'current weather': fetchWeather,
+        'show history': () => {
+            speak("Here are your recent commands: " + commandHistory.join(", "));
+        },
+        'clear history': clearCommandHistory,
+        'open calculator': () => {
+            speak("Opening calculator...");
+            window.open('Calculator:///');
+        },
+        'play music': playMusic,
+        'stop music': stopMusic,
+        'set happy mood': () => {
+            mood = 'happy';
+            speak("Mood set to happy. Let's have a great day!");
+        },
+        'set sad mood': () => {
+            mood = 'sad';
+            speak("Mood set to sad. Hope you feel better soon.");
+        },
+        'set neutral mood': () => {
+            mood = 'neutral';
+            speak("Mood set to neutral. Let's get back to normal.");
+        },
+        'search': searchQuery,
+        'ask question': chatGPTResponse // Adding chatGPT-like question answering
+    };
+
+    const matchedCommand = Object.keys(commandMap).find(cmd => message.includes(cmd));
+
+    if (matchedCommand) {
+        commandMap[matchedCommand]();
+    } else {
+        respondToUnknownCommand(message);
+    }
+}
+
+// Respond based on mood and unknown command
+function respondToUnknownCommand(message) {
+    let response;
+    if (mood === 'happy') {
+        response = `I'm glad you're curious! Here's what I found about ${message}.`;
+    } else if (mood === 'sad') {
+        response = `I wish I could help with that. Let me look it up for you.`;
+    } else {
+        response = `I found some information for ${message}.`;
+    }
+    speak(response);
+    searchQuery(message);
+}    
