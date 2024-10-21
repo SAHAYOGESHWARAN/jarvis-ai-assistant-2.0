@@ -7,16 +7,16 @@ let voices = [];
 let selectedVoice = null;
 let isListening = false;
 let listenTimeout = null;
+let mood = 'neutral'; // Default mood
 
 // Speak function with adjustable rate, pitch, and volume
-function speak(text, rate = 1, pitch = 1, volume = 1, duration = 10000) {
+function speak(text, rate = 1, pitch = 1, volume = 1) {
     const textSpeak = new SpeechSynthesisUtterance(text);
     textSpeak.voice = selectedVoice;
     textSpeak.rate = rate;
     textSpeak.volume = volume;
     textSpeak.pitch = pitch;
 
-    // Speak the text
     window.speechSynthesis.speak(textSpeak);
     content.textContent = text; // Show the spoken word in the output
 }
@@ -35,7 +35,15 @@ window.speechSynthesis.onvoiceschanged = loadVoices;
 // Greet based on time of day
 function wishMe() {
     const hour = new Date().getHours();
-    let greeting = hour < 12 ? "Good Morning, Boss..." : hour < 17 ? "Good Afternoon, Master..." : "Good Evening,  Sir...";
+    let greeting;
+
+    if (hour < 12) {
+        greeting = "Good Morning, Boss...";
+    } else if (hour < 17) {
+        greeting = "Good Afternoon, Master...";
+    } else {
+        greeting = "Good Evening, Sir...";
+    }
     speak(greeting);
 }
 
@@ -51,6 +59,7 @@ const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecogni
 const recognition = new SpeechRecognition();
 recognition.interimResults = true;
 recognition.continuous = false;
+
 
 recognition.onresult = (event) => {
     const transcript = event.results[event.resultIndex][0].transcript.trim();
@@ -142,7 +151,19 @@ function takeCommand(message) {
             window.open('Calculator:///');
         },
         'play music': playMusic,
-        'stop music': stopMusic
+        'stop music': stopMusic,
+        'set happy mood': () => {
+            mood = 'happy';
+            speak("Mood set to happy.");
+        },
+        'set sad mood': () => {
+            mood = 'sad';
+            speak("Mood set to sad.");
+        },
+        'set neutral mood': () => {
+            mood = 'neutral';
+            speak("Mood set to neutral.");
+        }
     };
 
     const matchedCommand = Object.keys(commandMap).find(cmd => message.includes(cmd));
@@ -150,9 +171,22 @@ function takeCommand(message) {
     if (matchedCommand) {
         commandMap[matchedCommand]();
     } else {
-        speak(`I found some information for ${message} on Google`);
-        window.open(`https://www.google.com/search?q=${encodeURIComponent(message)}`, "_blank");
+        respondToUnknownCommand(message);
     }
+}
+
+// Respond based on mood and unknown command
+function respondToUnknownCommand(message) {
+    let response;
+    if (mood === 'happy') {
+        response = `I'm glad you're curious! Here's what I found about ${message}.`;
+    } else if (mood === 'sad') {
+        response = `I wish I could help with that. Let me look it up for you.`;
+    } else {
+        response = `I found some information for ${message}.`;
+    }
+    speak(response);
+    window.open(`https://www.google.com/search?q=${encodeURIComponent(message)}`, "_blank");
 }
 
 // Fetch a random joke
@@ -233,6 +267,6 @@ btn.addEventListener('click', () => {
     if (!isListening) {
         startListening();
     } else {
-        speak("JARVIS is already listening, saha. Say 'Stop Jarvis' to deactivate.");
+        speak("JARVIS is already listening, Sir. Say 'Stop Jarvis' to deactivate.");
     }
 });
