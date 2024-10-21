@@ -41,9 +41,11 @@ function speak(text, rate = 1, pitch = 1, volume = 1, duration = 10000) {
 // Load available voices dynamically
 function loadVoices() {
     voices = window.speechSynthesis.getVoices();
+    console.log("Voices loaded:", voices);
+    
     if (voices.length > 0) {
         selectedVoice = voices.find(voice => voice.name === 'Google US English') || voices[0];
-        console.log("Loaded voices: ", voices);
+        console.log(`Selected voice: ${selectedVoice.name}`);
     } else {
         console.error("No voices available.");
     }
@@ -64,11 +66,13 @@ function wishMe() {
     } else {
         greeting = "Good Evening, saha Sir...";
     }
+    console.log(`Greeting based on time: ${greeting}`);
     speak(greeting);
 }
 
 // Initialize JARVIS
 window.addEventListener('load', () => {
+    console.log("Initializing JARVIS...");
     loadVoices();
     speak("Initializing JARVIS...", 1, 1, 1);
     wishMe();
@@ -94,6 +98,7 @@ recognition.onresult = (event) => {
 
 // Manage Speech Recognition Stop
 recognition.onend = () => {
+    console.log("Speech recognition ended.");
     content.textContent = "Click the button to start listening again.";
     clearTimeout(listenTimeout);
     isListening = false;
@@ -110,6 +115,7 @@ recognition.onerror = (event) => {
 function startListening(timeoutDuration = 10000) {
     if (!isListening) {
         isListening = true;
+        console.log("Listening started...");
         content.textContent = "Listening...";
         recognition.start();
 
@@ -122,12 +128,15 @@ function startListening(timeoutDuration = 10000) {
 // Stop Listening Function
 function stopListening() {
     isListening = false;
+    console.log("Listening stopped.");
     recognition.stop();
     speak("JARVIS has stopped listening.");
 }
 
 // Command handling function
 function takeCommand(message) {
+    console.log(`Processing command: ${message}`);
+    
     const commandMap = {
         'hey jarvis': () => {
             speak("Hello Sir, how may I assist you?");
@@ -135,10 +144,12 @@ function takeCommand(message) {
         },
         'open google': () => {
             speak("Opening Google...");
+            console.log("Opening Google in new tab...");
             window.open("https://google.com", "_blank");
         },
         'open youtube': () => {
             speak("Opening YouTube...");
+            console.log("Opening YouTube in new tab...");
             window.open("https://youtube.com", "_blank");
         },
         'current president of india': () => {
@@ -149,10 +160,12 @@ function takeCommand(message) {
         },
         'time': () => {
             const time = new Date().toLocaleTimeString();
+            console.log(`Current time: ${time}`);
             speak(`The current time is ${time}`);
         },
         'date': () => {
             const date = new Date().toLocaleDateString();
+            console.log(`Current date: ${date}`);
             speak(`Today's date is ${date}`);
         },
         'tell me a joke': fetchRandomJoke,
@@ -164,6 +177,7 @@ function takeCommand(message) {
         'clear history': clearCommandHistory,
         'open calculator': () => {
             speak("Opening calculator...");
+            console.log("Opening calculator...");
             window.open('Calculator:///');
         },
         'play music': playMusic,
@@ -173,8 +187,10 @@ function takeCommand(message) {
     const matchedCommand = Object.keys(commandMap).find(cmd => message.includes(cmd));
 
     if (matchedCommand) {
+        console.log(`Matched command: ${matchedCommand}`);
         commandMap[matchedCommand]();
     } else {
+        console.log(`No command matched. Searching Google for: ${message}`);
         speak(`I found some information for ${message} on Google`);
         window.open(`https://www.google.com/search?q=${encodeURIComponent(message)}`, "_blank");
     }
@@ -182,9 +198,11 @@ function takeCommand(message) {
 
 // Fetch a random joke
 function fetchRandomJoke() {
+    console.log("Fetching a random joke...");
     fetch('https://official-joke-api.appspot.com/jokes/random')
         .then(response => response.json())
         .then(data => {
+            console.log(`Joke: ${data.setup} ... ${data.punchline}`);
             speak(`${data.setup} ... ${data.punchline}`);
         })
         .catch(error => {
@@ -195,10 +213,12 @@ function fetchRandomJoke() {
 
 // Fetch latest news
 function fetchNews() {
+    console.log("Fetching latest news...");
     fetch('https://newsapi.org/v2/top-headlines?country=in&apiKey=YOUR_API_KEY')
         .then(response => response.json())
         .then(data => {
             const headline = data.articles[0].title;
+            console.log(`Latest news headline: ${headline}`);
             speak(`The latest headline is: ${headline}`);
         })
         .catch(error => {
@@ -209,11 +229,13 @@ function fetchNews() {
 
 // Fetch current weather
 function fetchWeather() {
+    console.log("Fetching current weather...");
     fetch('https://api.openweathermap.org/data/2.5/weather?q=Delhi&appid=YOUR_API_KEY&units=metric')
         .then(response => response.json())
         .then(data => {
             const temperature = data.main.temp;
             const description = data.weather[0].description;
+            console.log(`Weather in Delhi: ${temperature}°C, ${description}`);
             speak(`The current weather in Delhi is ${temperature} degrees Celsius with ${description}.`);
         })
         .catch(error => {
@@ -226,6 +248,7 @@ function fetchWeather() {
 let audioPlayer = null;
 
 function playMusic() {
+    console.log("Playing music...");
     audioPlayer = new Audio('path_to_music.mp3');
     audioPlayer.play();
     speak("Playing music...");
@@ -233,6 +256,7 @@ function playMusic() {
 
 function stopMusic() {
     if (audioPlayer) {
+        console.log("Stopping music...");
         audioPlayer.pause();
         speak("Music stopped.");
     }
@@ -240,22 +264,26 @@ function stopMusic() {
 
 // Save command history to local storage
 function saveCommandHistory(command) {
+    console.log(`Saving command to history: ${command}`);
     commandHistory.push(command);
     localStorage.setItem('commandHistory', JSON.stringify(commandHistory));
 }
 
 // Display command history on the UI
 function displayCommandHistory() {
+    console.log("Displaying command history...");
     historyContainer.innerHTML = ""; // Clear existing history
     commandHistory.forEach((cmd, index) => {
         const commandElement = document.createElement('div');
         commandElement.textContent = `${index + 1}: ${cmd}`; // Format command with index
         historyContainer.appendChild(commandElement); // Append each command to the container
+        console.log(`Displayed command: ${index + 1}: ${cmd}`);
     });
 }
 
 // Clear command history
 function clearCommandHistory() {
+    console.log("Clearing command history...");
     commandHistory.length = 0;
     localStorage.removeItem('commandHistory');
     displayCommandHistory();
@@ -264,6 +292,7 @@ function clearCommandHistory() {
 
 // Button to start/stop listening
 btn.addEventListener('click', () => {
+    console.log(`Button clicked. Listening state: ${isListening}`);
     if (!isListening) {
         startListening();
     } else {
