@@ -60,7 +60,6 @@ const recognition = new SpeechRecognition();
 recognition.interimResults = true;
 recognition.continuous = false;
 
-
 recognition.onresult = (event) => {
     const transcript = event.results[event.resultIndex][0].transcript.trim();
     
@@ -75,7 +74,6 @@ recognition.onresult = (event) => {
         displayCommandHistory();
     }
 };
-
 
 // Manage Speech Recognition Stop
 recognition.onend = () => {
