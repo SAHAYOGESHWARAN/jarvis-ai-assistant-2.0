@@ -9,19 +9,33 @@ let isListening = false;
 let listenTimeout = null;
 
 // Speak function with adjustable rate, pitch, and volume
-function speak(text, rate = 1, pitch = 1, volume = 1) {
+function speak(text, rate = 1, pitch = 1, volume = 1, duration = 10000) {
+    // Log the spoken text, rate, pitch, and volume before starting
+    console.log(`Text to be spoken: "${text}"`);
+    console.log(`Speaking with rate: ${rate}, pitch: ${pitch}, volume: ${volume}`);
+
+    // Create the speech synthesis utterance
     const textSpeak = new SpeechSynthesisUtterance(text);
     textSpeak.voice = selectedVoice;
     textSpeak.rate = rate;
     textSpeak.volume = volume;
     textSpeak.pitch = pitch;
 
-    // Extra console.log to display the spoken text
-    console.log(`Text to be spoken: "${text}"`);
-    console.log(`Speaking with rate: ${rate}, pitch: ${pitch}, volume: ${volume}`);
-    
+    // Speak the text
     window.speechSynthesis.speak(textSpeak);
+
+    // Update the displayed content
     content.textContent = text; // Show the spoken word in the output
+    
+    // Log the action in the console after speaking starts
+    console.log(`JARVIS is now speaking: "${text}"`);
+
+    // Set a timeout to stop speaking after the specified duration
+    setTimeout(() => {
+        // Stop speaking
+        window.speechSynthesis.cancel();
+        console.log(`JARVIS stopped speaking after ${duration / 1000} seconds.`);
+    }, duration); // duration is in milliseconds
 }
 
 // Load available voices dynamically
@@ -41,9 +55,15 @@ window.speechSynthesis.onvoiceschanged = loadVoices;
 // Greet based on time of day
 function wishMe() {
     const hour = new Date().getHours();
-    const greeting = (hour < 12) ? "Good Morning, saha Boss..." :
-        (hour < 17) ? "Good Afternoon, saha Master..." :
-        "Good Evening, saha Sir...";
+    let greeting;
+
+    if (hour < 12) {
+        greeting = "Good Morning, saha Boss...";
+    } else if (hour < 17) {
+        greeting = "Good Afternoon, saha Master...";
+    } else {
+        greeting = "Good Evening, saha Sir...";
+    }
     speak(greeting);
 }
 
@@ -64,10 +84,10 @@ recognition.continuous = false;
 recognition.onresult = (event) => {
     const transcript = event.results[event.resultIndex][0].transcript.trim();
     console.log(`Recognized Speech: ${transcript}`);
-    
+
     content.textContent = transcript; // Show recognized speech
     takeCommand(transcript.toLowerCase());
-    
+
     saveCommandHistory(transcript);
     displayCommandHistory();
 };
@@ -92,7 +112,7 @@ function startListening(timeoutDuration = 10000) {
         isListening = true;
         content.textContent = "Listening...";
         recognition.start();
-        
+
         listenTimeout = setTimeout(() => {
             stopListening();
         }, timeoutDuration);
@@ -250,3 +270,4 @@ btn.addEventListener('click', () => {
         speak("JARVIS is already listening, saha. Say 'Stop Jarvis' to deactivate.");
     }
 });
+
