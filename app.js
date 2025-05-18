@@ -1,39 +1,41 @@
-// JARVIS: Iron Man-Style AI Assistant (Web Version)
+// JARVIS AI Assistant - Advanced Web Version
 // Modern, modular, scalable, and feature-rich
 
+// --- DOM Elements ---
 const btn = document.querySelector('.talk');
 const content = document.querySelector('.content');
 const historyContainer = document.querySelector('.history');
-const API_KEYS = {
-    OPENAI: 'YOUR_OPENAI_API_KEY',
-    WEATHER: 'YOUR_OPENWEATHER_KEY',
-    NEWS: 'YOUR_NEWSAPI_KEY',
-    SMART_HOME: 'YOUR_SMART_HOME_API_KEY'
+
+// --- API Keys (from config.js or .env via build) ---
+const API_KEYS = window.API_KEYS || {
+    OPENAI: 'sk-4A2eKp1A7dEfghijklmnopQRsTUVwxyz1234567890',
+    WEATHER: '',
+    NEWS: '',
+    SMART_HOME: ''
 };
 
+// --- State ---
 let commandHistory = JSON.parse(localStorage.getItem('commandHistory')) || [];
 let userProfile = JSON.parse(localStorage.getItem('userProfile')) || {
-    name: "Sir",
+    name: "User",
     preferences: {
         voiceSpeed: 1.1,
         voicePitch: 1,
         autoDarkMode: true,
         personality: 'professional', // professional, casual, humorous
-        voiceType: 'default' // male, female, robotic, default
+        voiceType: 'default', // male, female, robotic, default
+        autoListening: true
     },
-    voiceprint: null // For voiceprint recognition
+    voiceprint: null
 };
-
 let conversationContext = [];
 let isListening = false;
-let wakeWordDetected = false;
 let selectedVoice = null;
 let isSpeaking = false;
 
 // --- Voice Setup ---
 window.speechSynthesis.onvoiceschanged = () => {
     const voices = window.speechSynthesis.getVoices();
-    // Choose based on user preference
     if (userProfile.preferences.voiceType === 'female') {
         selectedVoice = voices.find(v => v.lang.startsWith('en') && v.name.toLowerCase().includes('female')) || voices[0];
     } else if (userProfile.preferences.voiceType === 'male') {
@@ -73,14 +75,50 @@ function animateSpeaking(active) {
     }
 }
 
-// --- Friendly Small Talk & Greetings ---
+// --- Greeting Overlay ---
+function showGreetingOverlay(greetingText) {
+    let overlay = document.getElementById('jarvis-greeting-overlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'jarvis-greeting-overlay';
+        overlay.style.position = 'fixed';
+        overlay.style.top = '20%';
+        overlay.style.left = '50%';
+        overlay.style.transform = 'translate(-50%, -50%)';
+        overlay.style.background = 'rgba(30,30,40,0.95)';
+        overlay.style.color = '#00ffe7';
+        overlay.style.fontSize = '2rem';
+        overlay.style.padding = '2rem 3rem';
+        overlay.style.borderRadius = '1.5rem';
+        overlay.style.boxShadow = '0 0 40px #00ffe7, 0 0 10px #222';
+        overlay.style.zIndex = '9999';
+        overlay.style.textAlign = 'center';
+        overlay.style.fontFamily = 'Segoe UI, Arial, sans-serif';
+        document.body.appendChild(overlay);
+    }
+    overlay.textContent = greetingText;
+    overlay.style.display = 'block';
+}
+function hideGreetingOverlay() {
+    const overlay = document.getElementById('jarvis-greeting-overlay');
+    if (overlay) overlay.style.display = 'none';
+}
+
 function wishMe() {
     const hour = new Date().getHours();
     let greeting = "Hello!";
-    if (hour >= 0 && hour < 12) greeting = "Good morning, " + userProfile.name + ".";
-    else if (hour >= 12 && hour < 17) greeting = "Good afternoon, " + userProfile.name + ".";
-    else greeting = "Good evening, " + userProfile.name + ".";
-    speak(`${greeting} I am Jarvis, your personal AI assistant. Ready for your command.`);
+    if (hour >= 0 && hour < 12) greeting = `Good morning, ${userProfile.name}.`;
+    else if (hour >= 12 && hour < 17) greeting = `Good afternoon, ${userProfile.name}.`;
+    else greeting = `Good evening, ${userProfile.name}.`;
+    const fullGreeting = `${greeting} I am Jarvis, your personal AI assistant. Ready for your command.`;
+    showGreetingOverlay(fullGreeting);
+    const avatar = document.querySelector('.image img');
+    if (avatar) avatar.classList.add('jarvis-greet');
+    speak(fullGreeting);
+    setTimeout(() => {
+        hideGreetingOverlay();
+        if (avatar) avatar.classList.remove('jarvis-greet');
+    }, 4000);
 }
 
 // --- Speech Recognition Setup ---
@@ -108,29 +146,27 @@ recognition.onend = () => {
         setTimeout(startAutoListening, 500);
     }
 };
-
 function startAutoListening() {
     if (!isRecognizing && !isSpeaking) recognition.start();
 }
 
 btn.addEventListener('click', () => {
-    if (isRecognizing) {
-        recognition.stop();
-    } else {
-        recognition.start();
-    }
+    if (isRecognizing) recognition.stop();
+    else recognition.start();
 });
-
 window.addEventListener('load', () => {
-    if (userProfile.preferences.autoDarkMode) {
-        document.body.classList.add('dark-mode');
-    }
+    if (userProfile.preferences.autoDarkMode) document.body.classList.add('dark-mode');
     wishMe();
     if (userProfile.preferences.autoListening) startAutoListening();
 });
 
 // --- Main Command Handler ---
 async function takeCommand(message) {
+    // OpenAI Insert Command
+    if (/^insert\b/.test(message)) {
+        await handleOpenAIInsert(message);
+        return;
+    }
     // Friendly small talk
     if (/\b(hi|hello|hey|jarvis)\b/.test(message)) {
         speak("Hello! How can I help you today?");
@@ -150,9 +186,7 @@ async function takeCommand(message) {
     }
     // Sentiment analysis
     const sentiment = analyzeSentiment(message);
-    if (sentiment === 'negative') {
-        speak("I'm here for you. Let me know if I can help.", 'response');
-    }
+    if (sentiment === 'negative') speak("I'm here for you. Let me know if I can help.", 'response');
     // Context-aware conversation
     conversationContext.push({ message });
     if (conversationContext.length > 10) conversationContext.shift();
@@ -166,9 +200,26 @@ async function takeCommand(message) {
     speak(aiResponse, 'response');
 }
 
+// --- OpenAI Insert Command ---
+async function handleOpenAIInsert(command) {
+    const insertPrompt = command.replace(/^insert\s+/i, '').trim();
+    if (!insertPrompt) {
+        speak('Please specify what you want to insert.');
+        return;
+    }
+    content.textContent = 'Generating content...';
+    try {
+        const aiText = await generateAIResponse(insertPrompt);
+        content.textContent = aiText;
+        speak('Content inserted.');
+    } catch (e) {
+        content.textContent = '';
+        speak('Sorry, I could not generate the content.', 'error');
+    }
+}
+
 // --- AI/LLM Integration ---
 async function generateAIResponse(prompt) {
-    // Add context and memory
     const messages = [
         { role: "system", content: `You are JARVIS, an advanced AI assistant. Personality: ${userProfile.preferences.personality}. Respond concisely and professionally.` },
         ...conversationContext.slice(-5).map(ctx => ({ role: "user", content: ctx.message })),
@@ -191,7 +242,6 @@ async function generateAIResponse(prompt) {
 
 // --- Sentiment Analysis (stub) ---
 function analyzeSentiment(text) {
-    // TODO: Integrate real sentiment analysis API
     if (/sad|angry|upset|bad|hate/.test(text)) return 'negative';
     if (/happy|great|good|love|awesome/.test(text)) return 'positive';
     return 'neutral';
@@ -211,7 +261,7 @@ async function handleSystemCommands(command) {
     }
     // Stock
     if (/stock|market|share price/.test(command)) {
-        await fetchAndSpeakStockPrice('AAPL'); // Example
+        await fetchAndSpeakStockPrice('AAPL');
         return true;
     }
     // Sports
@@ -277,61 +327,61 @@ async function handleSystemCommands(command) {
     return false;
 }
 
-// --- Real-Time Data Integration (Weather, News, Stocks, Sports) ---
+// --- Real-Time Data Integration ---
 async function fetchAndSpeakWeather() {
+    content.textContent = 'Fetching weather...';
     const response = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=Delhi&appid=${API_KEYS.WEATHER}&units=metric`);
     const weatherData = await response.json();
     const temperature = weatherData.main.temp;
     const description = weatherData.weather[0].description;
-    speak(`The current weather in Delhi is ${temperature} degrees Celsius with ${description}.`);
+    const weatherMsg = `The current weather in Delhi is ${temperature} degrees Celsius with ${description}.`;
+    content.textContent = weatherMsg;
+    speak(weatherMsg);
 }
 async function fetchAndSpeakNews() {
+    content.textContent = 'Fetching news...';
     const response = await fetch(`https://newsapi.org/v2/top-headlines?country=in&apiKey=${API_KEYS.NEWS}`);
     const newsData = await response.json();
     const headline = newsData.articles[0]?.title || "No headlines found.";
-    speak(`The latest headline is: ${headline}`);
+    const newsMsg = `The latest headline is: ${headline}`;
+    content.textContent = newsMsg;
+    speak(newsMsg);
 }
 async function fetchAndSpeakStockPrice(stockSymbol) {
+    content.textContent = 'Fetching stock price...';
     const response = await fetch(`https://api.example.com/stock/${stockSymbol}`);
     const stockData = await response.json();
-    speak(`The current price of ${stockSymbol} is $${stockData.price}.`);
+    const stockMsg = `The current price of ${stockSymbol} is $${stockData.price}.`;
+    content.textContent = stockMsg;
+    speak(stockMsg);
 }
 async function fetchAndSpeakSportsNews() {
+    content.textContent = 'Fetching sports news...';
     const response = await fetch(`https://newsapi.org/v2/top-headlines?category=sports&apiKey=${API_KEYS.NEWS}`);
     const sportsNewsData = await response.json();
     const headline = sportsNewsData.articles[0]?.title || "No sports headlines found.";
-    speak(`Latest sports headline: ${headline}`);
+    const sportsMsg = `Latest sports headline: ${headline}`;
+    content.textContent = sportsMsg;
+    speak(sportsMsg);
 }
 
 // --- Smart Home Integration (Stub) ---
 async function controlSmartHome(command) {
-    // Parse device and action from command
-    // TODO: Integrate with real IoT backend (Raspberry Pi/ESP32)
     speak("Smart home control is not yet fully implemented in this web version.");
 }
-
 // --- Task Automation (Stub) ---
 async function manageCalendar(command) {
-    // TODO: Integrate with Google Calendar or similar
     speak("Calendar integration is coming soon.");
 }
 async function sendEmailOrMessage(command) {
-    // TODO: Integrate with email/SMS APIs
     speak("Email and messaging will be available in a future update.");
 }
-
 // --- Multi-Device Sync (Stub) ---
-// TODO: Implement cloud sync for chat and settings
-
 // --- Voiceprint Recognition (Stub) ---
-// TODO: Integrate with a voiceprint recognition API
-
 // --- Advanced Security (Stub) ---
 async function securityAssistant(command) {
-    // TODO: Add facial recognition, encrypted commands, session timeout
     speak("Advanced security features are not available in this version.");
 }
-
 // --- AI Personality Settings ---
 function setPersonality(command) {
     if (command.includes('professional')) userProfile.preferences.personality = 'professional';
@@ -349,44 +399,27 @@ function setVoiceType(command) {
     window.speechSynthesis.onvoiceschanged();
     speak(`Voice type changed to ${userProfile.preferences.voiceType}.`);
 }
-
 // --- Learning Mode (Stub) ---
 async function learningMode(command) {
-    // TODO: Let Jarvis learn new commands and skills
     speak("Learning mode is not yet implemented.");
 }
-
 // --- Code Assistant Mode (Stub) ---
 async function codeAssistant(command) {
-    // TODO: Integrate with code editor APIs or provide code help
     speak("Code assistant mode is coming soon.");
 }
-
 // --- Clipboard Assistant (Stub) ---
 async function clipboardAssistant(command) {
-    // TODO: Clipboard reading and suggestions (requires Electron or browser permissions)
     speak("Clipboard assistant is not available in this version.");
 }
-
 // --- Multilingual Support (Stub) ---
 async function translateAndSpeak(command) {
-    // TODO: Integrate with translation APIs
     speak("Multilingual support is coming soon.");
 }
-
 // --- File/Application Control (Stub) ---
 async function openApplication(command) {
-    // TODO: Open files or applications (requires Electron or native bridge)
     speak("Application control is not available in this web version.");
 }
-
-// --- Emotion-Based UI Reactions (Stub) ---
-// TODO: Change UI color/animation based on sentiment
-
-// --- Mobile App Companion (Stub) ---
-// TODO: Android/iOS version with sync and notifications
-
-// --- Proactive Assistance (reminders, suggestions) ---
+// --- Proactive Assistance ---
 function proactiveAssistance() {
     const hour = new Date().getHours();
     if (hour === 8 && !commandHistory.includes('schedule')) {
@@ -394,7 +427,6 @@ function proactiveAssistance() {
     }
 }
 setInterval(proactiveAssistance, 3600000);
-
 // --- UI Controls ---
 document.querySelector('.weather-btn')?.addEventListener('click', fetchAndSpeakWeather);
 document.querySelector('.news-btn')?.addEventListener('click', fetchAndSpeakNews);
@@ -406,7 +438,6 @@ document.querySelector('.dark-mode-toggle')?.addEventListener('click', () => {
     localStorage.setItem('userProfile', JSON.stringify(userProfile));
     speak("Dark mode toggled.", 'acknowledge');
 });
-
 // --- Exported for future modules ---
 window.jarvis = {
     speak,
